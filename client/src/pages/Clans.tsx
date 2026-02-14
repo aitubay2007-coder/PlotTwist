@@ -6,6 +6,7 @@ import { Plus, Users, Link as LinkIcon, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 interface ClanRow {
   role: string;
@@ -31,6 +32,7 @@ export default function Clans() {
   const [newClanName, setNewClanName] = useState('');
   const [newClanDesc, setNewClanDesc] = useState('');
   const [joinCode, setJoinCode] = useState('');
+  const isMobile = useIsMobile();
 
   // Auto-open create modal from URL param (e.g. /clans?action=create)
   useEffect(() => {
@@ -182,11 +184,11 @@ export default function Clans() {
   return (
     <div style={{ minHeight: 'calc(100vh - 4rem)', maxWidth: 1120, margin: '0 auto', padding: '32px 24px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 32 }}>
-        <h1 style={{ fontFamily: "'Bangers', cursive", fontSize: 48, color: '#FFD60A', margin: 0, textShadow: '2px 2px 0 #000' }}>
+        <h1 style={{ fontFamily: "'Bangers', cursive", fontSize: isMobile ? 32 : 48, color: '#FFD60A', margin: 0, textShadow: '2px 2px 0 #000' }}>
           {t('clans.title')}
         </h1>
         {/* Always show buttons — if not logged in, openCreate/openJoin will redirect to login */}
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, flexDirection: isMobile ? 'column' as const : 'row' as const, width: isMobile ? '100%' : 'auto' }}>
           <button
             onClick={openJoin}
             style={{
@@ -213,7 +215,7 @@ export default function Clans() {
       </div>
 
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }} className="md:grid-cols-2 max-md:!grid-cols-1">
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 24 }}>
           {[1, 2, 3].map((i) => (
             <div key={i} style={{ height: 160, background: '#141C2B', borderRadius: 12, border: '1px solid #243044' }} />
           ))}
@@ -236,8 +238,7 @@ export default function Clans() {
         </div>
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}
-          className="md:grid-cols-2 max-md:!grid-cols-1"
+          style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 24 }}
         >
           {clans.map((clan, i) => (
             <motion.div

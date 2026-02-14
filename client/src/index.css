@@ -36,3 +36,19 @@ h1, h2, h3 {
 ::-webkit-scrollbar-track { background: #0B1120; }
 ::-webkit-scrollbar-thumb { background: #FFD60A; border-radius: 3px; }
 ::selection { background: #FFD60A; color: #0B1120; }
+
+/* Mobile fixes */
+* { box-sizing: border-box; }
+
+input, textarea, select, button {
+  max-width: 100%;
+}
+
+img { max-width: 100%; height: auto; }
+
+@media (max-width: 767px) {
+  body { overflow-x: hidden; }
+  
+  /* Prevent horizontal scroll */
+  #root { overflow-x: hidden; }
+}

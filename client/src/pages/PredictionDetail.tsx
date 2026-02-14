@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Swords, TrendingUp } from 'lucide-react';
+import { useIsMobile } from '../hooks/useMediaQuery';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import BetModal from '../components/BetModal';
@@ -18,6 +19,7 @@ export default function PredictionDetail() {
   const [loading, setLoading] = useState(true);
   const [betOpen, setBetOpen] = useState(false);
   const [challengeOpen, setChallengeOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const fetchPrediction = async () => {
     setLoading(true);
@@ -108,7 +110,7 @@ export default function PredictionDetail() {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         {/* Main Card */}
-        <div style={{ background: '#141C2B', border: '1px solid #243044', borderRadius: 16, padding: 32 }}>
+        <div style={{ background: '#141C2B', border: '1px solid #243044', borderRadius: 16, padding: isMobile ? 18 : 32 }}>
           {/* Header */}
           <div style={{ marginBottom: 24 }}>
             {prediction.shows && (
@@ -116,7 +118,7 @@ export default function PredictionDetail() {
                 {prediction.shows.category} — {prediction.shows.title}
               </span>
             )}
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#E2E8F0', marginTop: 12, lineHeight: 1.3 }}>{prediction.title}</h1>
+            <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 700, color: '#E2E8F0', marginTop: 12, lineHeight: 1.3 }}>{prediction.title}</h1>
             {prediction.description && <p style={{ color: '#64748B', marginTop: 8 }}>{prediction.description}</p>}
             {prediction.profiles && (
               <p style={{ color: '#64748B', fontSize: 14, marginTop: 8 }}>
@@ -138,7 +140,7 @@ export default function PredictionDetail() {
           </div>
 
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }} className="sm:grid-cols-4 max-sm:!grid-cols-2">
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
             <StatBox label={t('predictions.pool')} value={prediction.total_pool.toLocaleString()} color="#FFD60A" />
             <StatBox label={t('predictions.vote_yes')} value={prediction.total_yes.toLocaleString()} color="#2ED573" />
             <StatBox label={t('predictions.vote_no')} value={prediction.total_no.toLocaleString()} color="#FF4757" />
@@ -147,7 +149,7 @@ export default function PredictionDetail() {
 
           {/* Actions */}
           {isActive && isAuthenticated && (
-            <div style={{ display: 'flex', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 12 }}>
               <button onClick={() => setBetOpen(true)} style={{
                 flex: 1, padding: '16px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
                 background: '#FFD60A', color: '#0B1120', fontWeight: 700, fontSize: 16,

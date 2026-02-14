@@ -5,6 +5,7 @@ import { Swords, Check, X, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 interface ChallengeRow {
   id: string;
@@ -27,6 +28,7 @@ export default function Challenges() {
   const [challenges, setChallenges] = useState<ChallengeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'incoming' | 'outgoing'>('incoming');
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (isAuthenticated && user) fetchChallenges();
@@ -96,7 +98,7 @@ export default function Challenges() {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 4rem)', maxWidth: 1120, margin: '0 auto', padding: '32px 24px' }}>
-      <h1 style={{ fontFamily: "'Bangers', cursive", fontSize: 48, color: '#FFD60A', margin: '0 0 32px', textShadow: '2px 2px 0 #000' }}>
+      <h1 style={{ fontFamily: "'Bangers', cursive", fontSize: isMobile ? 32 : 48, color: '#FFD60A', margin: '0 0 32px', textShadow: '2px 2px 0 #000' }}>
         {t('challenges.title')}
       </h1>
 
@@ -105,7 +107,7 @@ export default function Challenges() {
         <button
           onClick={() => setTab('incoming')}
           style={{
-            padding: '12px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            padding: isMobile ? '10px 14px' : '12px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer',
             background: tab === 'incoming' ? '#FFD60A' : '#141C2B',
             color: tab === 'incoming' ? '#0B1120' : '#64748B',
             border: tab === 'incoming' ? 'none' : '1px solid rgba(255,214,10,0.2)',
@@ -116,7 +118,7 @@ export default function Challenges() {
         <button
           onClick={() => setTab('outgoing')}
           style={{
-            padding: '12px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            padding: isMobile ? '10px 14px' : '12px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer',
             background: tab === 'outgoing' ? '#FFD60A' : '#141C2B',
             color: tab === 'outgoing' ? '#0B1120' : '#64748B',
             border: tab === 'outgoing' ? 'none' : '1px solid rgba(255,214,10,0.2)',
@@ -150,7 +152,7 @@ export default function Challenges() {
                 borderRadius: 14, padding: 20,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: isMobile ? 12 : 0 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                     <div style={{
@@ -188,7 +190,7 @@ export default function Challenges() {
                 </div>
 
                 {tab === 'incoming' && challenge.status === 'pending' && (
-                  <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
+                  <div style={{ display: 'flex', gap: 8, marginLeft: isMobile ? 0 : 16, alignSelf: isMobile ? 'flex-end' as const : undefined }}>
                     <button
                       onClick={() => handleAccept(challenge.id)}
                       style={{
@@ -211,7 +213,7 @@ export default function Challenges() {
                 )}
 
                 {challenge.status === 'pending' && tab === 'outgoing' && (
-                  <div style={{ marginLeft: 16 }}>
+                  <div style={{ marginLeft: isMobile ? 0 : 16, alignSelf: isMobile ? 'flex-end' as const : undefined }}>
                     <Clock size={24} color="#FFD60A" />
                   </div>
                 )}

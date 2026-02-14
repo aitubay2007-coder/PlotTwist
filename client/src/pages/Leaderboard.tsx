@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Trophy, Globe, MapPin, Coins } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 export default function Leaderboard() {
   const { t } = useTranslation();
@@ -11,6 +12,7 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'global' | 'country'>('global');
   const [country, setCountry] = useState('');
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchLeaderboard();
@@ -46,7 +48,7 @@ export default function Leaderboard() {
   return (
     <div style={{ minHeight: 'calc(100vh - 4rem)', maxWidth: 1120, margin: '0 auto', padding: '32px 24px' }}>
       <h1 style={{
-        fontFamily: "'Bangers', cursive", fontSize: 48, color: '#FFD60A', margin: '0 0 32px',
+        fontFamily: "'Bangers', cursive", fontSize: isMobile ? 32 : 48, color: '#FFD60A', margin: '0 0 32px',
         display: 'flex', alignItems: 'center', gap: 12, textShadow: '2px 2px 0 #000',
       }}>
         <Trophy size={40} />
@@ -58,7 +60,7 @@ export default function Leaderboard() {
         <button
           onClick={() => setTab('global')}
           style={{
-            padding: '12px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            padding: isMobile ? '10px 14px' : '12px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 8,
             background: tab === 'global' ? '#FFD60A' : '#141C2B',
             color: tab === 'global' ? '#0B1120' : '#64748B',
@@ -71,7 +73,7 @@ export default function Leaderboard() {
         <button
           onClick={() => setTab('country')}
           style={{
-            padding: '12px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            padding: isMobile ? '10px 14px' : '12px 24px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 8,
             background: tab === 'country' ? '#FFD60A' : '#141C2B',
             color: tab === 'country' ? '#0B1120' : '#64748B',
@@ -111,14 +113,14 @@ export default function Leaderboard() {
       <div style={{ background: '#141C2B', border: '1px solid rgba(255,214,10,0.2)', borderRadius: 16, overflow: 'hidden' }}>
         {/* Header */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '60px 1fr 120px 120px',
-          padding: '16px 24px', borderBottom: '1px solid rgba(255,214,10,0.1)',
+          display: 'grid', gridTemplateColumns: isMobile ? '40px 1fr 80px' : '60px 1fr 120px 120px',
+          padding: isMobile ? '12px 12px' : '16px 24px', borderBottom: '1px solid rgba(255,214,10,0.1)',
           color: '#64748B', fontSize: 13, fontWeight: 600,
         }}>
           <div>{t('leaderboard.rank')}</div>
           <div>{t('leaderboard.player')}</div>
           <div style={{ textAlign: 'right' }}>{t('leaderboard.reputation')}</div>
-          <div style={{ textAlign: 'right' }}>{t('leaderboard.coins')}</div>
+          <div style={{ textAlign: 'right', display: isMobile ? 'none' : undefined }}>{t('leaderboard.coins')}</div>
         </div>
 
         {loading ? (
@@ -136,8 +138,8 @@ export default function Leaderboard() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
                 style={{
-                  display: 'grid', gridTemplateColumns: '60px 1fr 120px 120px',
-                  padding: '16px 24px', alignItems: 'center',
+                  display: 'grid', gridTemplateColumns: isMobile ? '40px 1fr 80px' : '60px 1fr 120px 120px',
+                  padding: isMobile ? '12px 12px' : '16px 24px', alignItems: 'center',
                   borderBottom: i < players.length - 1 ? '1px solid rgba(255,214,10,0.05)' : 'none',
                   background: i === 0 ? 'rgba(255,214,10,0.03)' : 'transparent',
                   transition: 'background 0.2s',
@@ -155,7 +157,7 @@ export default function Leaderboard() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
-                    width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: isMobile ? 28 : 40, height: isMobile ? 28 : 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 700, fontSize: 14,
                     background: i === 0 ? '#FFD60A' : 'rgba(255,214,10,0.15)',
                     color: i === 0 ? '#0B1120' : '#FFD60A',
@@ -172,10 +174,12 @@ export default function Leaderboard() {
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ color: '#E2E8F0', fontWeight: 700 }}>{player.reputation.toLocaleString()}</span>
                 </div>
+                {!isMobile && (
                 <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
                   <Coins size={16} color="#FFD60A" />
                   <span style={{ color: '#FFD60A', fontWeight: 700 }}>{player.coins.toLocaleString()}</span>
                 </div>
+                )}
               </motion.div>
             ))}
           </div>

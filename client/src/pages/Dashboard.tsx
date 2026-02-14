@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Search, TrendingUp, Clock, Sparkles, Flame, Zap, Users, Swords } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Prediction } from '../types';
+import { useIsMobile, useIsTablet } from '../hooks/useMediaQuery';
 
 type Sort = 'trending' | 'newest' | 'ending_soon';
 
@@ -14,6 +15,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<Sort>('trending');
   const [search, setSearch] = useState('');
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
 
   useEffect(() => {
     (async () => {
@@ -81,11 +84,12 @@ export default function Dashboard() {
             maskImage: 'linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)',
             maxWidth: '55%',
+            display: isMobile ? 'none' : 'block',
           }}
         />
 
         {/* Content */}
-        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '50px 24px 40px' }}>
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: isMobile ? '36px 16px 30px' : '50px 24px 40px' }}>
           <h1 style={{
             fontFamily: "'Bangers', cursive", fontSize: 'clamp(56px, 10vw, 96px)',
             color: '#FFD60A', textShadow: '4px 4px 0px #000, 2px 2px 0px #000',
@@ -100,11 +104,10 @@ export default function Dashboard() {
       </div>
 
       {/* =========== MAIN CONTENT =========== */}
-      <div style={{ maxWidth: 1120, margin: '0 auto', padding: '32px 24px 60px' }}>
+      <div style={{ maxWidth: 1120, margin: '0 auto', padding: isMobile ? '20px 12px 40px' : '32px 24px 60px' }}>
 
         {/* ---- 3 Column: 2 Featured + Sidebar ---- */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 220px', gap: 20, marginBottom: 48 }}
-             className="lg:grid-cols-[1fr_1fr_220px] max-lg:!grid-cols-1">
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : '1fr 1fr 220px', gap: 20, marginBottom: 48 }}>
 
           {loading ? (
             <>
@@ -114,7 +117,7 @@ export default function Dashboard() {
           ) : featured.length > 0 ? (
             featured.map(p => <FeaturedCard key={p.id} prediction={p} />)
           ) : (
-            <div style={{ gridColumn: 'span 2', padding: 60, textAlign: 'center', color: '#64748B' }}>
+            <div style={{ gridColumn: isMobile ? 'span 1' : 'span 2', padding: 60, textAlign: 'center', color: '#64748B' }}>
               {t('predictions.no_predictions')}
             </div>
           )}
@@ -131,7 +134,7 @@ export default function Dashboard() {
         {/* ---- PREDICTION CARDS Section ---- */}
         <div style={{ marginBottom: 48 }}>
           <h2 style={{
-            fontFamily: "'Bangers', cursive", fontSize: 32, color: '#FFD60A',
+            fontFamily: "'Bangers', cursive", fontSize: isMobile ? 24 : 32, color: '#FFD60A',
             textShadow: '2px 2px 0px #000', margin: '0 0 20px', letterSpacing: 2,
           }}>
             {t('predictions.prediction_cards')}
@@ -169,15 +172,13 @@ export default function Dashboard() {
 
           {/* Cards grid */}
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}
-                 className="sm:grid-cols-2 lg:grid-cols-3 max-sm:!grid-cols-1">
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 16 }}>
               {[1,2,3].map(i => <Skeleton key={i} h={200} />)}
             </div>
           ) : (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}
-              className="sm:grid-cols-2 lg:grid-cols-3 max-sm:!grid-cols-1"
+              style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 16 }}
             >
               {(rest.length > 0 ? rest : filtered).map((p, i) => (
                 <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>

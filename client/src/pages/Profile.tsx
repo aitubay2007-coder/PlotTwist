@@ -5,11 +5,13 @@ import { Coins, Star, Target, BarChart3, Gift, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 export default function Profile() {
   const { t } = useTranslation();
   const { user, isAuthenticated, fetchProfile, setShowLogoutConfirm } = useAuthStore();
   const [claimingBonus, setClaimingBonus] = useState(false);
+  const isMobile = useIsMobile();
 
   if (!isAuthenticated || !user) {
     return (
@@ -59,17 +61,17 @@ export default function Profile() {
         {/* Profile Header */}
         <div style={{
           background: '#141C2B', border: '1px solid rgba(255,214,10,0.2)',
-          borderRadius: 16, padding: 32, marginBottom: 24,
+          borderRadius: 16, padding: isMobile ? 20 : 32, marginBottom: 24,
         }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 24 }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, flexWrap: 'wrap', alignItems: isMobile ? 'center' : 'center', gap: isMobile ? 16 : 24, textAlign: isMobile ? 'center' as const : 'left' as const }}>
             <div style={{
-              width: 96, height: 96, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: '#FFD60A', fontFamily: "'Bangers', cursive", fontSize: 40, color: '#0B1120',
+              width: isMobile ? 64 : 96, height: isMobile ? 64 : 96, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: '#FFD60A', fontFamily: "'Bangers', cursive", fontSize: isMobile ? 28 : 40, color: '#0B1120',
             }}>
               {user.username?.[0]?.toUpperCase() || '?'}
             </div>
             <div style={{ flex: 1 }}>
-              <h1 style={{ fontFamily: "'Bangers', cursive", fontSize: 40, color: '#FFD60A', margin: '0 0 4px' }}>
+              <h1 style={{ fontFamily: "'Bangers', cursive", fontSize: isMobile ? 28 : 40, color: '#FFD60A', margin: '0 0 4px' }}>
                 @{user.username}
               </h1>
               {user.display_name && <p style={{ color: '#E2E8F0', fontSize: 18, marginTop: 4 }}>{user.display_name}</p>}
@@ -108,8 +110,7 @@ export default function Profile() {
         </div>
 
         {/* Stats Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}
-             className="sm:grid-cols-4 max-sm:!grid-cols-2">
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
           {stats.map((stat, i) => (
             <motion.div
               key={i}
