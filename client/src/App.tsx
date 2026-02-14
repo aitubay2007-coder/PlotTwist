@@ -1,7 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
+import { useIsMobile } from './hooks/useMediaQuery';
 import Navbar from './components/Navbar';
+import BottomNav from './components/BottomNav';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -15,6 +17,7 @@ import Profile from './pages/Profile';
 
 export default function App() {
   const { initialize, isLoading } = useAuthStore();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     initialize();
@@ -43,7 +46,12 @@ export default function App() {
   return (
     <>
       <Navbar />
-      <main style={{ minHeight: '100vh', paddingTop: 60, background: '#0B1120' }}>
+      <main style={{
+        minHeight: '100vh',
+        paddingTop: isMobile ? 52 : 60,
+        paddingBottom: isMobile ? 72 : 0,
+        background: '#0B1120',
+      }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
@@ -58,6 +66,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
+      <BottomNav />
     </>
   );
 }

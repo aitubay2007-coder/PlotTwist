@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Menu, X, Coins, Globe, User, LogOut, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 const NAV = [
   { to: '/', label: 'nav.home' },
@@ -16,6 +17,7 @@ export default function Navbar() {
   const loc = useLocation();
   const { user, isAuthenticated, logout, showLogoutConfirm, setShowLogoutConfirm } = useAuthStore();
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const active = (p: string) => (p === '/' ? loc.pathname === '/' : loc.pathname.startsWith(p));
 
@@ -23,54 +25,109 @@ export default function Navbar() {
     <>
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-        background: 'rgba(11,17,32,0.92)', backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,214,10,0.15)',
+        background: 'rgba(11,17,32,0.95)', backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(255,214,10,0.1)',
       }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60 }}>
-
-            <Link to="/" style={{ fontFamily: "'Bangers', cursive", fontSize: 28, color: '#FFD60A', textDecoration: 'none', letterSpacing: 2 }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: isMobile ? '0 16px' : '0 24px' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            height: isMobile ? 52 : 60,
+          }}>
+            {/* Logo */}
+            <Link to="/" style={{
+              fontFamily: "'Bangers', cursive",
+              fontSize: isMobile ? 24 : 28,
+              color: '#FFD60A',
+              textDecoration: 'none',
+              letterSpacing: 2,
+            }}>
               PlotTwist
             </Link>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 28 }} className="hidden md:flex">
-              {NAV.map(n => (
-                <Link key={n.to} to={n.to} style={{
-                  fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s',
-                  color: active(n.to) ? '#FFD60A' : '#94A3B8',
-                }}>
-                  {t(n.label)}
-                </Link>
-              ))}
-            </div>
+            {/* Desktop nav links */}
+            {!isMobile && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+                {NAV.map(n => (
+                  <Link key={n.to} to={n.to} style={{
+                    fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s',
+                    color: active(n.to) ? '#FFD60A' : '#94A3B8',
+                  }}>
+                    {t(n.label)}
+                  </Link>
+                ))}
+              </div>
+            )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Right section */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
+              {/* Language toggle */}
               <button onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'ru' : 'en')}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderRadius: 6, border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                <Globe size={15} />
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  padding: isMobile ? '5px 8px' : '6px 10px',
+                  borderRadius: 6, border: 'none', background: 'transparent',
+                  color: '#94A3B8', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                }}>
+                <Globe size={14} />
                 {i18n.language === 'en' ? 'EN' : 'RU'}
               </button>
 
-              {isAuthenticated && user ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} className="hidden md:flex">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: 'rgba(255,214,10,0.1)', border: '1px solid rgba(255,214,10,0.25)' }}>
+              {/* Mobile: show coins badge */}
+              {isMobile && isAuthenticated && user && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  padding: '4px 10px', borderRadius: 20,
+                  background: 'rgba(255,214,10,0.1)',
+                  border: '1px solid rgba(255,214,10,0.2)',
+                }}>
+                  <Coins size={13} color="#FFD60A" />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#FFD60A' }}>
+                    {user.coins.toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              {/* Desktop: full user section */}
+              {!isMobile && isAuthenticated && user && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '5px 12px', borderRadius: 8,
+                    background: 'rgba(255,214,10,0.1)',
+                    border: '1px solid rgba(255,214,10,0.25)',
+                  }}>
                     <Coins size={14} color="#FFD60A" />
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#FFD60A' }}>{user.coins}</span>
                   </div>
-                  <Link to="/profile" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 8, textDecoration: 'none', color: '#94A3B8', fontSize: 13, fontWeight: 500 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#1C2538', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Link to="/profile" style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '4px 10px', borderRadius: 8,
+                    textDecoration: 'none', color: '#94A3B8', fontSize: 13, fontWeight: 500,
+                  }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', background: '#1C2538',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
                       <User size={14} color="#64748B" />
                     </div>
                     <span>{user.username}</span>
                   </Link>
-                  <button onClick={() => setShowLogoutConfirm(true)} style={{ border: 'none', background: 'transparent', padding: '6px', cursor: 'pointer' }}
+                  <button onClick={() => setShowLogoutConfirm(true)}
+                    style={{ border: 'none', background: 'transparent', padding: '6px', cursor: 'pointer' }}
                     title={t('nav.logout')}>
                     <LogOut size={16} color="#64748B" />
                   </button>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="hidden md:flex">
-                  <Link to="/login" style={{ fontSize: 13, fontWeight: 500, color: '#94A3B8', textDecoration: 'none', padding: '6px 14px' }}>
+              )}
+
+              {/* Desktop: login/register */}
+              {!isMobile && !isAuthenticated && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Link to="/login" style={{
+                    fontSize: 13, fontWeight: 500, color: '#94A3B8',
+                    textDecoration: 'none', padding: '6px 14px',
+                  }}>
                     {t('nav.login')}
                   </Link>
                   <Link to="/register" style={{
@@ -82,39 +139,37 @@ export default function Navbar() {
                 </div>
               )}
 
-              <button onClick={() => setOpen(!open)} className="md:hidden"
-                style={{ border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer', padding: 6 }}>
-                {open ? <X size={22} /> : <Menu size={22} />}
-              </button>
+              {/* Mobile: hamburger for extra options */}
+              {isMobile && !isAuthenticated && (
+                <button onClick={() => setOpen(!open)}
+                  style={{ border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer', padding: 4 }}>
+                  {open ? <X size={20} /> : <Menu size={20} />}
+                </button>
+              )}
             </div>
           </div>
 
-          {open && (
-            <div className="md:hidden" style={{ paddingBottom: 16, borderTop: '1px solid rgba(255,214,10,0.1)' }}>
-              {NAV.map(n => (
-                <Link key={n.to} to={n.to} onClick={() => setOpen(false)} style={{
-                  display: 'block', padding: '12px 16px', fontSize: 14, fontWeight: 500, textDecoration: 'none', borderRadius: 8,
-                  color: active(n.to) ? '#FFD60A' : '#94A3B8',
-                }}>
-                  {t(n.label)}
-                </Link>
-              ))}
-              {isAuthenticated && user ? (
-                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,214,10,0.1)' }}>
-                  <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8, color: '#FFD60A', fontSize: 13 }}>
-                    <Coins size={14} /> {user.coins} {t('common.coins_short')} · @{user.username}
-                  </div>
-                  <button onClick={() => { setOpen(false); setShowLogoutConfirm(true); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', fontSize: 14, color: '#FF4757', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    <LogOut size={16} /> {t('nav.logout')}
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,214,10,0.1)' }}>
-                  <Link to="/login" onClick={() => setOpen(false)} style={{ padding: '10px 16px', fontSize: 14, color: '#94A3B8', textDecoration: 'none' }}>{t('nav.login')}</Link>
-                  <Link to="/register" onClick={() => setOpen(false)} style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, color: '#0B1120', background: '#FFD60A', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>{t('nav.register')}</Link>
-                </div>
-              )}
+          {/* Mobile dropdown (only for non-authenticated users) */}
+          {isMobile && open && !isAuthenticated && (
+            <div style={{
+              paddingBottom: 16, paddingTop: 8,
+              borderTop: '1px solid rgba(255,214,10,0.1)',
+              display: 'flex', flexDirection: 'column', gap: 8,
+            }}>
+              <Link to="/login" onClick={() => setOpen(false)} style={{
+                padding: '12px 16px', fontSize: 15, color: '#E2E8F0',
+                textDecoration: 'none', borderRadius: 10, background: '#141C2B',
+                textAlign: 'center', fontWeight: 500,
+              }}>
+                {t('nav.login')}
+              </Link>
+              <Link to="/register" onClick={() => setOpen(false)} style={{
+                padding: '12px 16px', fontSize: 15, fontWeight: 700,
+                color: '#0B1120', background: '#FFD60A', borderRadius: 10,
+                textDecoration: 'none', textAlign: 'center',
+              }}>
+                {t('nav.register')}
+              </Link>
             </div>
           )}
         </div>
@@ -134,10 +189,15 @@ export default function Navbar() {
             onClick={e => e.stopPropagation()}
             style={{
               background: '#141C2B', border: '1px solid #243044', borderRadius: 16,
-              padding: 32, maxWidth: 380, width: '100%', textAlign: 'center',
+              padding: isMobile ? 24 : 32, maxWidth: 380, width: '100%', textAlign: 'center',
             }}
           >
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,214,10,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: 'rgba(255,214,10,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px',
+            }}>
               <AlertTriangle size={28} color="#FFD60A" />
             </div>
             <h3 style={{ fontSize: 20, fontWeight: 700, color: '#E2E8F0', marginBottom: 8 }}>
