@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Coins, Star, Target, BarChart3, Gift, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -9,7 +8,6 @@ import toast from 'react-hot-toast';
 
 export default function Profile() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { user, isAuthenticated, fetchProfile, setShowLogoutConfirm } = useAuthStore();
   const [claimingBonus, setClaimingBonus] = useState(false);
 

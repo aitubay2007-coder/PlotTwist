@@ -2,16 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Search, TrendingUp, Clock, Sparkles, ChevronRight, Flame, Zap, Users, Swords } from 'lucide-react';
+import { Search, TrendingUp, Clock, Sparkles, Flame, Zap, Users, Swords } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../store/authStore';
 import type { Prediction } from '../types';
 
 type Sort = 'trending' | 'newest' | 'ending_soon';
 
 export default function Dashboard() {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuthStore();
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<Sort>('trending');
