@@ -127,7 +127,9 @@ export default function Clans() {
       setNewClanDesc('');
       fetchClans();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : t('clans.create_failed'));
+      const msg = err && typeof err === 'object' && 'message' in err ? (err as { message: string }).message : t('clans.create_failed');
+      console.error('Clan creation error:', err);
+      toast.error(msg, { duration: 6000 });
     }
   };
 
