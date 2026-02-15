@@ -44,7 +44,7 @@ export default function Clans() {
       setShowCreate(true);
       setSearchParams({}, { replace: true });
     }
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (isAuthenticated && user) fetchClans();

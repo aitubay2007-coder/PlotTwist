@@ -128,7 +128,8 @@
     "power_members": "Members",
     "hall_of_fame": "Hall of Fame",
     "all_members": "All Members",
-    "no_members": "No members yet"
+    "no_members": "No members yet",
+    "xp_label": "XP"
   },
   "challenges": {
     "title": "Challenges",

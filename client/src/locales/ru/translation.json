@@ -128,7 +128,8 @@
     "power_members": "Участники",
     "hall_of_fame": "Зал Славы",
     "all_members": "Все Участники",
-    "no_members": "Пока нет участников"
+    "no_members": "Пока нет участников",
+    "xp_label": "XP"
   },
   "challenges": {
     "title": "Вызовы",

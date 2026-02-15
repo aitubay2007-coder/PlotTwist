@@ -163,7 +163,7 @@ export default function ClanChat({ clanId }: { clanId: string }) {
       background: '#141C2B', border: '1px solid rgba(255,214,10,0.15)',
       borderRadius: 16, overflow: 'hidden',
       display: 'flex', flexDirection: 'column',
-      height: isMobile ? 420 : 500,
+      height: isMobile ? 420 : 500, position: 'relative' as const,
     }}>
       {/* Header */}
       <div style={{

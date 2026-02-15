@@ -340,7 +340,7 @@ function ClanLeaderboardTable({ clans, loading, isMobile, t }: {
                 )}
                 {!isMobile && (
                   <div style={{ textAlign: 'center', color: '#E2E8F0', fontWeight: 700 }}>
-                    Lv.{clan.level}
+                    {t('clans.level_label')} {clan.level}
                   </div>
                 )}
 

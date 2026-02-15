@@ -151,7 +151,7 @@ export default function Profile() {
                 @{user.username}
               </h1>
               {user.display_name && <p style={{ color: '#E2E8F0', fontSize: 18, marginTop: 4 }}>{user.display_name}</p>}
-              {user.country && <p style={{ color: '#64748B', fontSize: 14, marginTop: 4 }}>{user.country}</p>}
+              {user.country && <p style={{ color: '#64748B', fontSize: 14, marginTop: 4 }}>{COUNTRIES.find(c => c.code === user.country)?.label || user.country}</p>}
               <p style={{ color: '#64748B', fontSize: 14, marginTop: 4 }}>
                 {t('profile.joined')} {new Date(user.created_at).toLocaleDateString()}
               </p>
@@ -304,7 +304,7 @@ export default function Profile() {
                           {b.predictions?.title || '—'}
                         </span>
                         <span style={{ fontSize: 12, color: '#64748B' }}>
-                          {b.position.toUpperCase()} · {b.amount.toLocaleString()} TC
+                          {b.position.toUpperCase()} · {b.amount.toLocaleString()} {t('common.coins_short')}
                         </span>
                       </div>
                       {won && <Trophy size={18} color="#2ED573" />}

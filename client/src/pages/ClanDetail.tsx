@@ -346,7 +346,7 @@ export default function ClanDetail() {
               {[
                 { label: t('clans.power_level'), val: `${clan.level}/5` },
                 { label: t('clans.power_members'), val: memberCount.toString() },
-                { label: 'XP', val: clan.xp.toLocaleString() },
+                { label: t('clans.xp_label'), val: clan.xp.toLocaleString() },
               ].map(item => (
                 <span key={item.label} style={{
                   background: '#0B1120', padding: '4px 10px', borderRadius: 8,
