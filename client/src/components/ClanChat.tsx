@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, MessageCircle, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -127,6 +128,9 @@ export default function ClanChat({ clanId }: { clanId: string }) {
 
     if (error) {
       console.error('Send message error:', error);
+      toast.error(t('common.error'));
+      setSending(false);
+      return;
     }
     setNewMsg('');
     setSending(false);

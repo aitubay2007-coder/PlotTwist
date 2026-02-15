@@ -124,7 +124,7 @@ export default function Transactions() {
                   color: cfg.sign === '+' ? '#2ED573' : '#FF4757',
                   whiteSpace: 'nowrap',
                 }}>
-                  {cfg.sign}{Math.abs(tx.amount).toLocaleString()} TC
+                  {cfg.sign}{Math.abs(tx.amount).toLocaleString()} {t('common.coins_short')}
                 </div>
               </motion.div>
             );
