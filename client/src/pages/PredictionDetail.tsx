@@ -166,6 +166,15 @@ export default function PredictionDetail() {
               </button>
             </div>
           )}
+          {isActive && !isAuthenticated && (
+            <Link to="/login" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '16px 0', borderRadius: 12, textDecoration: 'none',
+              background: '#FFD60A', color: '#0B1120', fontWeight: 700, fontSize: 16,
+            }}>
+              <TrendingUp size={18} /> {t('predictions.login_to_bet')}
+            </Link>
+          )}
         </div>
       </motion.div>
 

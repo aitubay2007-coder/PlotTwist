@@ -56,7 +56,8 @@
     "days_left": "{{count}}d left",
     "hours_left": "{{count}}h left",
     "minutes_left": "{{count}}m left",
-    "amount_range": "min {{min}}, max {{max}}"
+    "amount_range": "min {{min}}, max {{max}}",
+    "login_to_bet": "Log in to place a bet"
   },
   "create": {
     "title": "Create Prediction",
