@@ -88,7 +88,7 @@ export default function Profile() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(500)
-      .then(({ data }) => setMyBets((data as typeof myBets) || []));
+      .then(({ data }) => setMyBets((data as unknown as typeof myBets) || []));
   }, [user]);
 
   const openEdit = () => {
