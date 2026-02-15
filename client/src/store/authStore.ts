@@ -37,6 +37,8 @@ interface AuthState {
   isAuthenticated: boolean;
   showLogoutConfirm: boolean;
   setShowLogoutConfirm: (show: boolean) => void;
+  /** Instantly adjust coins in UI (optimistic). Pass negative to deduct. */
+  adjustCoins: (delta: number) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, username: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -51,6 +53,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   showLogoutConfirm: false,
 
   setShowLogoutConfirm: (show) => set({ showLogoutConfirm: show }),
+
+  adjustCoins: (delta) => {
+    const u = get().user;
+    if (u) set({ user: { ...u, coins: Math.max(0, u.coins + delta) } });
+  },
 
   initialize: async () => {
     if (!import.meta.env.VITE_SUPABASE_URL) {

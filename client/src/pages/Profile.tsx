@@ -15,7 +15,7 @@ const COUNTRIES = [
 
 export default function Profile() {
   const { t } = useTranslation();
-  const { user, isAuthenticated, fetchProfile, setShowLogoutConfirm } = useAuthStore();
+  const { user, isAuthenticated, fetchProfile, setShowLogoutConfirm, adjustCoins } = useAuthStore();
   const [claimingBonus, setClaimingBonus] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
@@ -52,8 +52,11 @@ export default function Profile() {
         description: 'Daily bonus',
       });
 
+      // Instantly show +50 in UI
+      adjustCoins(50);
       toast.success(t('profile.bonus_claimed'));
-      await fetchProfile();
+      // Sync real balance in background
+      fetchProfile();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('profile.bonus_failed'));
     } finally {

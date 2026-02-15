@@ -16,7 +16,7 @@ import toast from 'react-hot-toast';
 export default function PredictionDetail() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const { isAuthenticated, user, fetchProfile } = useAuthStore();
+  const { isAuthenticated, user, fetchProfile, adjustCoins } = useAuthStore();
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [loading, setLoading] = useState(true);
   const [betOpen, setBetOpen] = useState(false);
@@ -73,12 +73,15 @@ export default function PredictionDetail() {
         return;
       }
 
+      // Instantly update coins in UI
+      adjustCoins(-amount);
+
       // Award clan XP (+5) for placing a bet
       awardClanXP(user.id, 5);
 
       toast.success(t('predictions.bet_placed', { position: position.toUpperCase(), amount }));
 
-      // Refresh both prediction data and user balance
+      // Refresh prediction data + sync real balance in background
       fetchPrediction();
       fetchProfile();
     } catch (err: unknown) {
@@ -108,6 +111,8 @@ export default function PredictionDetail() {
           { duration: 5000 }
         );
         fetchPrediction();
+        // Refresh balance — creator or winners may have received coins
+        fetchProfile();
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('predictions.resolve_failed'));
