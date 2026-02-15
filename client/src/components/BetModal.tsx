@@ -36,6 +36,13 @@ export default function BetModal({
   const [amount, setAmount] = useState(MIN_BET);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Reset amount when modal opens or balance changes
+  if (isOpen && amount > maxBet && maxBet >= MIN_BET) {
+    setAmount(maxBet);
+  } else if (isOpen && amount > maxBet) {
+    setAmount(MIN_BET);
+  }
+
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };

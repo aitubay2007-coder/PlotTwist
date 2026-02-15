@@ -45,7 +45,8 @@ export default function NotificationBell() {
         filter: `user_id=eq.${user.id}`,
       }, (payload) => {
         const n = payload.new as Notification;
-        setNotifications(prev => [n, ...prev]);
+        // Deduplicate: only add if not already in list
+        setNotifications(prev => prev.some(x => x.id === n.id) ? prev : [n, ...prev]);
         setUnreadCount(c => c + 1);
       })
       .subscribe();

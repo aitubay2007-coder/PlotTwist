@@ -63,22 +63,22 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) return;
-    // Fetch user's predictions
+    // Fetch user's predictions (all, for accurate stats)
     supabase
       .from('predictions')
       .select('id, title, status')
       .eq('creator_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(20)
+      .limit(500)
       .then(({ data }) => setMyPredictions(data || []));
 
-    // Fetch user's bets
+    // Fetch user's bets (all, for accurate win rate)
     supabase
       .from('bets')
       .select('id, prediction_id, position, amount, predictions(title, status)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(20)
+      .limit(500)
       .then(({ data }) => setMyBets((data as typeof myBets) || []));
   }, [user]);
 
