@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -29,18 +29,19 @@ export default function CreatePrediction() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [showId, setShowId] = useState('');
+  const [showName, setShowName] = useState('');
   const [shows, setShows] = useState<Show[]>([]);
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showsLoading, setShowsLoading] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // Auth guard
   useEffect(() => {
     if (!isAuthenticated) navigate('/login', { replace: true });
   }, [isAuthenticated, navigate]);
 
-  // Fetch shows from Supabase
+  // Fetch existing shows for autocomplete
   useEffect(() => {
     (async () => {
       try {
@@ -49,23 +50,56 @@ export default function CreatePrediction() {
         if (data) setShows(data);
       } catch (err) {
         console.error('Shows fetch failed:', err);
-      } finally {
-        setShowsLoading(false);
       }
     })();
   }, []);
 
-  // Filter shows by selected category
-  const filteredShows = category ? shows.filter(s => s.category === category) : shows;
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Filter existing shows for suggestions
+  const suggestions = category && showName.trim().length >= 1
+    ? shows.filter(s => s.category === category && s.title.toLowerCase().includes(showName.trim().toLowerCase()))
+    : [];
+
+  // Find or create show, returns show ID
+  async function findOrCreateShow(): Promise<string | null> {
+    const trimmed = showName.trim();
+    if (!trimmed || !category) return null;
+
+    const existing = shows.find(
+      s => s.category === category && s.title.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing) return existing.id;
+
+    const { data, error } = await supabase
+      .from('shows')
+      .insert({ title: trimmed, category })
+      .select('id')
+      .single();
+    if (error) throw error;
+    return data.id;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !showId || !deadline || !user) {
+    if (!title || !showName.trim() || !category || !deadline || !user) {
       toast.error(t('create.fill_required'));
       return;
     }
     setLoading(true);
     try {
+      const showId = await findOrCreateShow();
+      if (!showId) throw new Error(t('create.failed'));
+
       const { error } = await supabase.from('predictions').insert({
         title,
         description: description || null,
@@ -118,44 +152,62 @@ export default function CreatePrediction() {
 
           {/* Category Selector */}
           <div>
-            <Label>{t('create.select_show')} *</Label>
-            {showsLoading ? (
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[1, 2, 3].map(i => (
-                  <div key={i} style={{ height: 36, width: 80, background: '#1C2538', borderRadius: 8, animation: 'shimmer 1.5s infinite' }} />
-                ))}
-              </div>
-            ) : (
-              <>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-                  {CATEGORIES.map(c => (
-                    <button key={c.key} type="button" onClick={() => { setCategory(c.key); setShowId(''); }}
+            <Label>{t('create.category')} *</Label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {CATEGORIES.map(c => (
+                <button key={c.key} type="button" onClick={() => { setCategory(c.key); setShowName(''); }}
+                  style={{
+                    padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    fontSize: 13, fontWeight: 700, transition: 'all 0.2s',
+                    background: category === c.key ? '#FFD60A' : '#1C2538',
+                    color: category === c.key ? '#0B1120' : '#94A3B8',
+                  }}>
+                  {c.emoji} {t(`categories.${c.key}`) || c.key}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Show Name Input with Autocomplete */}
+          {category && (
+            <div style={{ position: 'relative' }} ref={suggestionsRef}>
+              <Label>{t('create.show_name')} *</Label>
+              <input
+                type="text"
+                value={showName}
+                onChange={e => { setShowName(e.target.value); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                placeholder={t('create.show_name_placeholder')}
+                required
+                maxLength={120}
+                style={inputStyle}
+              />
+              {showSuggestions && suggestions.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                  background: '#1C2538', border: '1px solid #243044', borderRadius: 10,
+                  marginTop: 4, maxHeight: 180, overflowY: 'auto',
+                }}>
+                  {suggestions.slice(0, 8).map(s => (
+                    <button
+                      key={s.id} type="button"
+                      onClick={() => { setShowName(s.title); setShowSuggestions(false); }}
                       style={{
-                        padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                        fontSize: 13, fontWeight: 700, transition: 'all 0.2s',
-                        background: category === c.key ? '#FFD60A' : '#1C2538',
-                        color: category === c.key ? '#0B1120' : '#94A3B8',
-                      }}>
-                      {c.emoji} {t(`categories.${c.key}`) || c.key}
+                        display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px',
+                        background: 'transparent', border: 'none', color: '#E2E8F0',
+                        fontSize: 14, cursor: 'pointer', borderBottom: '1px solid #243044',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#243044')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      {s.title}
                     </button>
                   ))}
                 </div>
-
-                {/* Show within category */}
-                {category && filteredShows.length > 0 && (
-                  <select value={showId} onChange={e => setShowId(e.target.value)} required style={inputStyle}>
-                    <option value="">{t('create.select_show_placeholder')}</option>
-                    {filteredShows.map(s => (
-                      <option key={s.id} value={s.id}>{s.title}</option>
-                    ))}
-                  </select>
-                )}
-                {category && filteredShows.length === 0 && (
-                  <p style={{ color: '#64748B', fontSize: 13 }}>{t('create.no_shows_in_category')}</p>
-                )}
-              </>
-            )}
-          </div>
+              )}
+              <p style={{ color: '#64748B', fontSize: 12, marginTop: 4 }}>{t('create.show_name_hint')}</p>
+            </div>
+          )}
 
           {/* Deadline */}
           <div>
