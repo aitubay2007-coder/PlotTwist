@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Swords, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Swords, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
@@ -19,6 +19,8 @@ export default function PredictionDetail() {
   const [loading, setLoading] = useState(true);
   const [betOpen, setBetOpen] = useState(false);
   const [challengeOpen, setChallengeOpen] = useState(false);
+  const [resolving, setResolving] = useState(false);
+  const [showResolveConfirm, setShowResolveConfirm] = useState<'yes' | 'no' | null>(null);
   const isMobile = useIsMobile();
 
   const fetchPrediction = async () => {
@@ -73,6 +75,37 @@ export default function PredictionDetail() {
       fetchPrediction();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to place bet');
+    }
+  };
+
+  const handleResolve = async (outcome: 'yes' | 'no') => {
+    if (!user || !prediction || resolving) return;
+    setResolving(true);
+    try {
+      const { data, error } = await supabase.rpc('resolve_prediction', {
+        pred_id: prediction.id,
+        outcome,
+      });
+      if (error) throw error;
+      const result = data as { success?: boolean; error?: string; winners?: number; total_paid?: number };
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(
+          t('predictions.resolved_success', {
+            outcome: outcome.toUpperCase(),
+            winners: result.winners || 0,
+            paid: (result.total_paid || 0).toLocaleString(),
+          }),
+          { duration: 5000 }
+        );
+        fetchPrediction();
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t('predictions.resolve_failed'));
+    } finally {
+      setResolving(false);
+      setShowResolveConfirm(null);
     }
   };
 
@@ -146,6 +179,105 @@ export default function PredictionDetail() {
             <StatBox label={t('predictions.vote_no')} value={prediction.total_no.toLocaleString()} color="#FF4757" />
             <StatBox label={t('predictions.deadline')} value={deadline.toLocaleDateString()} color="#E2E8F0" />
           </div>
+
+          {/* Resolved Banner */}
+          {(prediction.status === 'resolved_yes' || prediction.status === 'resolved_no') && (
+            <div style={{
+              padding: 16, borderRadius: 12, marginBottom: 16,
+              background: prediction.status === 'resolved_yes' ? 'rgba(46,213,115,0.1)' : 'rgba(255,71,87,0.1)',
+              border: `1px solid ${prediction.status === 'resolved_yes' ? 'rgba(46,213,115,0.3)' : 'rgba(255,71,87,0.3)'}`,
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <Trophy size={24} color={prediction.status === 'resolved_yes' ? '#2ED573' : '#FF4757'} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: '#E2E8F0' }}>
+                  {t('predictions.resolved_title')}
+                </div>
+                <div style={{ fontSize: 14, color: prediction.status === 'resolved_yes' ? '#2ED573' : '#FF4757', fontWeight: 600 }}>
+                  {t('predictions.outcome')}: {prediction.status === 'resolved_yes' ? t('predictions.vote_yes') : t('predictions.vote_no')}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Resolve Section (creator only) */}
+          {isActive && isAuthenticated && user?.id === prediction.creator_id && (
+            <div style={{
+              padding: 20, borderRadius: 12, marginBottom: 16,
+              background: 'rgba(255,214,10,0.05)',
+              border: '1px solid rgba(255,214,10,0.2)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <AlertTriangle size={18} color="#FFD60A" />
+                <span style={{ fontWeight: 700, fontSize: 15, color: '#FFD60A' }}>
+                  {t('predictions.resolve_title')}
+                </span>
+              </div>
+              <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>
+                {t('predictions.resolve_desc')}
+              </p>
+
+              {showResolveConfirm ? (
+                <div style={{
+                  padding: 16, borderRadius: 10,
+                  background: showResolveConfirm === 'yes' ? 'rgba(46,213,115,0.1)' : 'rgba(255,71,87,0.1)',
+                  border: `1px solid ${showResolveConfirm === 'yes' ? 'rgba(46,213,115,0.3)' : 'rgba(255,71,87,0.3)'}`,
+                }}>
+                  <p style={{ color: '#E2E8F0', fontWeight: 600, fontSize: 14, marginBottom: 12 }}>
+                    {t('predictions.resolve_confirm', { outcome: showResolveConfirm.toUpperCase() })}
+                  </p>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={() => handleResolve(showResolveConfirm)}
+                      disabled={resolving}
+                      style={{
+                        flex: 1, padding: '12px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+                        fontWeight: 700, fontSize: 14,
+                        background: showResolveConfirm === 'yes' ? '#2ED573' : '#FF4757',
+                        color: '#fff',
+                        opacity: resolving ? 0.5 : 1,
+                      }}
+                    >
+                      {resolving ? t('common.loading') : t('predictions.resolve_yes_confirm')}
+                    </button>
+                    <button
+                      onClick={() => setShowResolveConfirm(null)}
+                      style={{
+                        flex: 1, padding: '12px 0', borderRadius: 10, cursor: 'pointer',
+                        fontWeight: 700, fontSize: 14,
+                        background: 'transparent', border: '1px solid #334155', color: '#94A3B8',
+                      }}
+                    >
+                      {t('common.cancel')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 12, flexDirection: isMobile ? 'column' as const : 'row' as const }}>
+                  <button
+                    onClick={() => setShowResolveConfirm('yes')}
+                    style={{
+                      flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
+                      background: '#2ED573', color: '#fff', fontWeight: 700, fontSize: 15,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    }}
+                  >
+                    <CheckCircle size={18} /> {t('predictions.resolve_yes')}
+                  </button>
+                  <button
+                    onClick={() => setShowResolveConfirm('no')}
+                    style={{
+                      flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
+                      background: '#FF4757', color: '#fff', fontWeight: 700, fontSize: 15,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    }}
+                  >
+                    <XCircle size={18} /> {t('predictions.resolve_no')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Actions */}
           {isActive && isAuthenticated && (

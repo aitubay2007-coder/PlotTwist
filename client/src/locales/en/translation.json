@@ -57,7 +57,17 @@
     "hours_left": "{{count}}h left",
     "minutes_left": "{{count}}m left",
     "amount_range": "min {{min}}, max {{max}}",
-    "login_to_bet": "Log in to place a bet"
+    "login_to_bet": "Log in to place a bet",
+    "resolve_title": "Resolve This Prediction",
+    "resolve_desc": "As the creator, you decide the outcome. Winners will receive coins from the total pool proportionally to their bets.",
+    "resolve_yes": "Came True (YES)",
+    "resolve_no": "Did Not Happen (NO)",
+    "resolve_confirm": "Are you sure? Outcome: {{outcome}}. This cannot be undone.",
+    "resolve_yes_confirm": "Confirm",
+    "resolve_failed": "Failed to resolve prediction",
+    "resolved_success": "Resolved! {{winners}} winners received {{paid}} coins total.",
+    "resolved_title": "This prediction has been resolved",
+    "outcome": "Outcome"
   },
   "create": {
     "title": "Create Prediction",
