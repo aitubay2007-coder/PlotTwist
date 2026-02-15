@@ -150,7 +150,10 @@
     "accepted_success": "Challenge accepted!",
     "declined_success": "Challenge declined",
     "failed": "Failed",
-    "login_required": "Log in to see your challenges"
+    "login_required": "Log in to see your challenges",
+    "sent_success": "Challenge sent!",
+    "user_not_found": "User not found",
+    "cant_challenge_self": "You can't challenge yourself!"
   },
   "leaderboard": {
     "title": "Leaderboard",

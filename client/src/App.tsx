@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
 import { useIsMobile } from './hooks/useMediaQuery';
@@ -66,6 +66,7 @@ export default function App() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/transactions" element={<Transactions />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       <BottomNav />

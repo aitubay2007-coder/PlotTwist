@@ -150,7 +150,10 @@
     "accepted_success": "Вызов принят!",
     "declined_success": "Вызов отклонён",
     "failed": "Ошибка",
-    "login_required": "Войдите, чтобы увидеть свои вызовы"
+    "login_required": "Войдите, чтобы увидеть свои вызовы",
+    "sent_success": "Вызов отправлен!",
+    "user_not_found": "Пользователь не найден",
+    "cant_challenge_self": "Нельзя бросить вызов самому себе!"
   },
   "leaderboard": {
     "title": "Рейтинг",

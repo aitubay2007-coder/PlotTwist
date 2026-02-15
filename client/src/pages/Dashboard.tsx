@@ -369,10 +369,9 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
             <span style={{ color: '#999' }}>{timeLeft(prediction.deadline)}</span>
           </div>
 
-          <button
-            onClick={e => e.preventDefault()}
+          <span
             style={{
-              width: '100%',
+              display: 'block', width: '100%',
               padding: isMobile ? '10px 0' : '12px 0',
               borderRadius: 10,
               border: '2px solid #b8860b',
@@ -381,10 +380,11 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
               fontSize: isMobile ? 14 : 15,
               cursor: 'pointer', letterSpacing: 1,
               fontFamily: "'Bangers', cursive",
+              textAlign: 'center',
             }}
           >
-            {t('predictions.vote_yes')}!
-          </button>
+            {t('predictions.place_bet')}
+          </span>
         </div>
       </div>
     </Link>

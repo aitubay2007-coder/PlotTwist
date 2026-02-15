@@ -333,7 +333,63 @@ export default function PredictionDetail() {
         isOpen={challengeOpen}
         onClose={() => setChallengeOpen(false)}
         predictionId={prediction.id}
-        onChallengeSent={() => setChallengeOpen(false)}
+        onChallengeSent={async (params) => {
+          if (!user) return;
+          try {
+            // Look up opponent by username
+            const { data: opponent, error: lookupErr } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('username', params.opponentUsername)
+              .single();
+            if (lookupErr || !opponent) {
+              toast.error(t('challenges.user_not_found'));
+              return;
+            }
+            if (opponent.id === user.id) {
+              toast.error(t('challenges.cant_challenge_self'));
+              return;
+            }
+
+            // Check balance
+            if (params.amount > user.coins) {
+              toast.error(t('predictions.insufficient_coins'));
+              return;
+            }
+
+            // Insert challenge
+            const { error: insertErr } = await supabase.from('challenges').insert({
+              challenger_id: user.id,
+              challenged_id: opponent.id,
+              prediction_id: params.predictionId,
+              challenger_position: params.position,
+              challenged_position: params.position === 'yes' ? 'no' : 'yes',
+              amount: params.amount,
+              status: 'pending',
+            });
+            if (insertErr) throw insertErr;
+
+            // Deduct coins from challenger
+            await supabase.rpc('increment_coins', {
+              user_id_param: user.id,
+              amount_param: -params.amount,
+            });
+
+            // Log transaction
+            await supabase.from('transactions').insert({
+              user_id: user.id,
+              type: 'challenge_sent',
+              amount: params.amount,
+              description: 'Challenge sent',
+            });
+
+            adjustCoins(-params.amount);
+            toast.success(t('challenges.sent_success'));
+            setChallengeOpen(false);
+          } catch {
+            toast.error(t('challenges.failed'));
+          }
+        }}
       />
 
       <PredictionComments predictionId={prediction.id} />

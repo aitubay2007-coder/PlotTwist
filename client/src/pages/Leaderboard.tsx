@@ -278,7 +278,7 @@ function ClanLeaderboardTable({ clans, loading, isMobile, t }: {
               transition={{ delay: i * 0.03 }}
             >
               <Link
-                to={`/clans/${clan.id}`}
+                to={`/clan/${clan.id}`}
                 style={{
                   display: 'grid',
                   gridTemplateColumns: isMobile ? '30px 1fr 60px' : '50px 1fr 80px 70px 100px',
