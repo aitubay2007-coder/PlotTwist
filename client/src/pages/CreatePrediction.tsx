@@ -33,12 +33,20 @@ export default function CreatePrediction() {
   const [shows, setShows] = useState<Show[]>([]);
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showsLoading, setShowsLoading] = useState(true);
 
   // Fetch shows from Supabase
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('shows').select('id, title, category').order('title');
-      if (data) setShows(data);
+      try {
+        const { data, error } = await supabase.from('shows').select('id, title, category').order('title');
+        if (error) console.error('Shows fetch error:', error);
+        if (data) setShows(data);
+      } catch (err) {
+        console.error('Shows fetch failed:', err);
+      } finally {
+        setShowsLoading(false);
+      }
     })();
   }, []);
 
@@ -106,31 +114,41 @@ export default function CreatePrediction() {
           {/* Category Selector */}
           <div>
             <Label>{t('create.select_show')} *</Label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-              {CATEGORIES.map(c => (
-                <button key={c.key} type="button" onClick={() => { setCategory(c.key); setShowId(''); }}
-                  style={{
-                    padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                    fontSize: 13, fontWeight: 700, transition: 'all 0.2s',
-                    background: category === c.key ? '#FFD60A' : '#1C2538',
-                    color: category === c.key ? '#0B1120' : '#94A3B8',
-                  }}>
-                  {c.emoji} {t(`categories.${c.key}`) || c.key}
-                </button>
-              ))}
-            </div>
-
-            {/* Show within category */}
-            {category && filteredShows.length > 0 && (
-              <select value={showId} onChange={e => setShowId(e.target.value)} required style={inputStyle}>
-                <option value="">{t('create.select_show_placeholder')}</option>
-                {filteredShows.map(s => (
-                  <option key={s.id} value={s.id}>{s.title}</option>
+            {showsLoading ? (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[1, 2, 3].map(i => (
+                  <div key={i} style={{ height: 36, width: 80, background: '#1C2538', borderRadius: 8, animation: 'shimmer 1.5s infinite' }} />
                 ))}
-              </select>
-            )}
-            {category && filteredShows.length === 0 && (
-              <p style={{ color: '#64748B', fontSize: 13 }}>{t('create.no_shows_in_category')}</p>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                  {CATEGORIES.map(c => (
+                    <button key={c.key} type="button" onClick={() => { setCategory(c.key); setShowId(''); }}
+                      style={{
+                        padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                        fontSize: 13, fontWeight: 700, transition: 'all 0.2s',
+                        background: category === c.key ? '#FFD60A' : '#1C2538',
+                        color: category === c.key ? '#0B1120' : '#94A3B8',
+                      }}>
+                      {c.emoji} {t(`categories.${c.key}`) || c.key}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Show within category */}
+                {category && filteredShows.length > 0 && (
+                  <select value={showId} onChange={e => setShowId(e.target.value)} required style={inputStyle}>
+                    <option value="">{t('create.select_show_placeholder')}</option>
+                    {filteredShows.map(s => (
+                      <option key={s.id} value={s.id}>{s.title}</option>
+                    ))}
+                  </select>
+                )}
+                {category && filteredShows.length === 0 && (
+                  <p style={{ color: '#64748B', fontSize: 13 }}>{t('create.no_shows_in_category')}</p>
+                )}
+              </>
             )}
           </div>
 

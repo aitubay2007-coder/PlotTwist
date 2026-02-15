@@ -57,12 +57,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
       return;
     }
+
+    // Timeout: don't block the app if Supabase is slow
+    const timeout = setTimeout(() => {
+      console.warn('[PT] init timeout — loading app without auth');
+      set({ isLoading: false });
+    }, 5000);
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) await get().fetchProfile();
     } catch (e) {
       console.error('[PT] init:', e);
     } finally {
+      clearTimeout(timeout);
       set({ isLoading: false });
     }
 
