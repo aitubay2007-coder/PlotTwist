@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import { ClanBadge } from '../components/ClanBadge';
 
 interface ClanRow {
   role: string;
@@ -16,6 +17,8 @@ interface ClanRow {
     name: string;
     description: string | null;
     invite_code: string;
+    xp: number;
+    level: number;
     created_at: string;
   };
 }
@@ -53,7 +56,7 @@ export default function Clans() {
     try {
       const { data, error } = await supabase
         .from('clan_members')
-        .select('role, joined_at, clans(id, name, description, invite_code, created_at)')
+        .select('role, joined_at, clans(id, name, description, invite_code, xp, level, created_at)')
         .eq('user_id', user.id);
 
       if (error) throw error;
@@ -260,11 +263,14 @@ export default function Clans() {
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,214,10,0.2)')}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#E2E8F0', margin: 0 }}>{clan.clans.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <h3 style={{ fontSize: 20, fontWeight: 700, color: '#E2E8F0', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{clan.clans.name}</h3>
+                    <ClanBadge level={clan.clans.level || 1} size="sm" />
+                  </div>
                   <span style={{
                     fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
                     background: 'rgba(255,214,10,0.15)', color: '#FFD60A',
-                    padding: '4px 10px', borderRadius: 12,
+                    padding: '4px 10px', borderRadius: 12, flexShrink: 0,
                   }}>
                     {clan.role}
                   </span>

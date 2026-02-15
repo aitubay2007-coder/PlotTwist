@@ -52,9 +52,45 @@ export interface Clan {
   creator_id: string;
   invite_code: string;
   avatar_url: string | null;
+  xp: number;
+  level: number;
   created_at: string;
   profiles?: Pick<Profile, 'username' | 'avatar_url'>;
   clan_members?: ClanMember[];
+}
+
+export interface ClanLeaderboardEntry {
+  id: string;
+  name: string;
+  description: string | null;
+  xp: number;
+  level: number;
+  created_at: string;
+  member_count: number;
+  total_reputation: number;
+  total_coins: number;
+}
+
+export const CLAN_LEVELS = [
+  { level: 1, xp: 0, title: 'Rookie', color: '#CD7F32' },
+  { level: 2, xp: 500, title: 'Rising', color: '#C0C0C0' },
+  { level: 3, xp: 2000, title: 'Veteran', color: '#FFD60A' },
+  { level: 4, xp: 5000, title: 'Elite', color: '#00D4FF' },
+  { level: 5, xp: 15000, title: 'Legendary', color: '#E040FB' },
+] as const;
+
+export function getClanLevel(level: number) {
+  return CLAN_LEVELS.find(l => l.level === level) || CLAN_LEVELS[0];
+}
+
+export function getNextLevelXP(level: number): number {
+  const next = CLAN_LEVELS.find(l => l.level === level + 1);
+  return next ? next.xp : CLAN_LEVELS[CLAN_LEVELS.length - 1].xp;
+}
+
+export function getCurrentLevelXP(level: number): number {
+  const current = CLAN_LEVELS.find(l => l.level === level);
+  return current ? current.xp : 0;
 }
 
 export interface ClanMember {
