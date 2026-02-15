@@ -8,13 +8,15 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import BetModal from '../components/BetModal';
 import ChallengeModal from '../components/ChallengeModal';
+import PredictionComments from '../components/PredictionComments';
 import type { Prediction } from '../types';
+import { awardClanXP } from '../lib/clanXP';
 import toast from 'react-hot-toast';
 
 export default function PredictionDetail() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, fetchProfile } = useAuthStore();
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [loading, setLoading] = useState(true);
   const [betOpen, setBetOpen] = useState(false);
@@ -48,31 +50,37 @@ export default function PredictionDetail() {
 
   const handleBet = async (position: string, amount: number) => {
     if (!user || !prediction) return;
+
+    // Client-side balance check
+    if (amount > user.coins) {
+      toast.error(t('predictions.insufficient_coins'));
+      return;
+    }
+
     try {
-      // Insert bet
-      const { error: betError } = await supabase.from('bets').insert({
-        user_id: user.id,
-        prediction_id: prediction.id,
-        position,
-        amount,
-      });
-      if (betError) throw betError;
-
-      // Update prediction totals
-      await supabase.rpc('increment_prediction_total', {
-        pred_id: prediction.id,
-        field_name: position === 'yes' ? 'total_yes' : 'total_no',
-        increment_amount: amount,
-      });
-
-      // Deduct coins
-      await supabase.rpc('increment_coins', {
+      // Atomic bet placement (checks balance server-side, deducts coins, inserts bet, updates pool)
+      const { data, error } = await supabase.rpc('place_bet', {
         user_id_param: user.id,
-        amount_param: -amount,
+        prediction_id_param: prediction.id,
+        position_param: position,
+        amount_param: amount,
       });
+
+      if (error) throw error;
+      const result = data as { success?: boolean; error?: string };
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      // Award clan XP (+5) for placing a bet
+      awardClanXP(user.id, 5);
 
       toast.success(t('predictions.bet_placed', { position: position.toUpperCase(), amount }));
+
+      // Refresh both prediction data and user balance
       fetchPrediction();
+      fetchProfile();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to place bet');
     }
@@ -322,6 +330,8 @@ export default function PredictionDetail() {
         predictionId={prediction.id}
         onChallengeSent={() => setChallengeOpen(false)}
       />
+
+      <PredictionComments predictionId={prediction.id} />
     </div>
   );
 }

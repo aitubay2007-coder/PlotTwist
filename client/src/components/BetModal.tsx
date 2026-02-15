@@ -29,7 +29,8 @@ export default function BetModal({
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const maxCoins = user?.coins ?? 0;
-  const maxBet = Math.max(MIN_BET, maxCoins);
+  const canBet = maxCoins >= MIN_BET;
+  const maxBet = maxCoins; // Can only bet what you have
 
   const [position, setPosition] = useState<'yes' | 'no' | null>(null);
   const [amount, setAmount] = useState(MIN_BET);
@@ -46,7 +47,7 @@ export default function BetModal({
   };
 
   const handleConfirm = async () => {
-    if (!position || amount < MIN_BET || amount > maxBet) return;
+    if (!canBet || !position || amount < MIN_BET || amount > maxBet) return;
     setIsSubmitting(true);
     try {
       await onBetPlaced(position, amount);
@@ -121,40 +122,56 @@ export default function BetModal({
               </button>
             </div>
 
-            {/* Amount slider */}
-            <div className="mb-4">
-              <label className="block text-sm text-pt-gray mb-2">
-                {t('predictions.amount')} ({t('predictions.amount_range', { min: MIN_BET, max: maxBet })})
-              </label>
-              <input
-                type="range"
-                min={MIN_BET}
-                max={maxBet}
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-                className="w-full h-2 bg-pt-dark rounded-lg appearance-none cursor-pointer accent-pt-yellow"
-              />
-              <div className="flex justify-between mt-1 text-sm">
-                <span className="text-pt-gray">{MIN_BET}</span>
-                <span className="text-pt-yellow font-medium">{amount}</span>
-                <span className="text-pt-gray">{maxBet}</span>
-              </div>
+            {/* Balance display */}
+            <div className="mb-3 flex items-center justify-between px-1">
+              <span className="text-sm text-pt-gray">{t('predictions.your_balance')}</span>
+              <span className="text-sm font-bold" style={{ color: canBet ? '#FFD60A' : '#FF4757' }}>
+                {maxCoins.toLocaleString()} {t('common.coins_short')}
+              </span>
             </div>
 
-            {/* Potential winnings */}
-            {position && amount >= MIN_BET && (
-              <p className="text-sm text-pt-gray-light mb-4">
-                {t('predictions.potential_winnings')}:{' '}
-                <span className="text-pt-green font-medium">
-                  +{potentialProfit.toFixed(0)} {t('common.coins')}
-                </span>
-              </p>
+            {!canBet ? (
+              <div className="text-center py-4 mb-4" style={{ background: 'rgba(255,71,87,0.1)', borderRadius: 10 }}>
+                <p className="text-pt-red text-sm font-semibold">{t('predictions.insufficient_coins')}</p>
+              </div>
+            ) : (
+              <>
+                {/* Amount slider */}
+                <div className="mb-4">
+                  <label className="block text-sm text-pt-gray mb-2">
+                    {t('predictions.amount')} ({t('predictions.amount_range', { min: MIN_BET, max: maxBet })})
+                  </label>
+                  <input
+                    type="range"
+                    min={MIN_BET}
+                    max={maxBet}
+                    value={Math.min(amount, maxBet)}
+                    onChange={(e) => setAmount(Number(e.target.value))}
+                    className="w-full h-2 bg-pt-dark rounded-lg appearance-none cursor-pointer accent-pt-yellow"
+                  />
+                  <div className="flex justify-between mt-1 text-sm">
+                    <span className="text-pt-gray">{MIN_BET}</span>
+                    <span className="text-pt-yellow font-medium">{amount}</span>
+                    <span className="text-pt-gray">{maxBet}</span>
+                  </div>
+                </div>
+
+                {/* Potential winnings */}
+                {position && amount >= MIN_BET && (
+                  <p className="text-sm text-pt-gray-light mb-4">
+                    {t('predictions.potential_winnings')}:{' '}
+                    <span className="text-pt-green font-medium">
+                      +{potentialProfit.toFixed(0)} {t('common.coins')}
+                    </span>
+                  </p>
+                )}
+              </>
             )}
 
             {/* Confirm */}
             <button
               onClick={handleConfirm}
-              disabled={!position || amount < MIN_BET || amount > maxBet || isSubmitting}
+              disabled={!canBet || !position || amount < MIN_BET || amount > maxBet || isSubmitting}
               className="w-full py-3 bg-pt-yellow text-pt-black font-bold rounded-lg hover:bg-pt-yellow-dark disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {isSubmitting ? t('common.loading') : t('predictions.confirm_bet')}

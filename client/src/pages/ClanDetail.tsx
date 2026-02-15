@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, Copy, Crown, Trophy, TrendingUp, Coins, Target, Zap } from 'lucide-react';
+import { ArrowLeft, Users, Copy, Crown, Trophy, TrendingUp, Coins, Target, Zap, LogOut, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { ClanBadge, ClanXPBar, ClanLevelShield } from '../components/ClanBadge';
 import ClanChat from '../components/ClanChat';
@@ -27,6 +28,7 @@ interface ClanDetailData {
   name: string;
   description: string | null;
   invite_code: string;
+  creator_id: string;
   xp: number;
   level: number;
   created_at: string;
@@ -36,8 +38,12 @@ interface ClanDetailData {
 export default function ClanDetail() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [clan, setClan] = useState<ClanDetailData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -48,7 +54,7 @@ export default function ClanDetail() {
     try {
       const { data, error } = await supabase
         .from('clans')
-        .select('id, name, description, invite_code, xp, level, created_at, clan_members(user_id, role, joined_at, profiles(username, avatar_url, coins, reputation))')
+        .select('id, name, description, invite_code, creator_id, xp, level, created_at, clan_members(user_id, role, joined_at, profiles(username, avatar_url, coins, reputation))')
         .eq('id', id)
         .single();
 
@@ -69,6 +75,39 @@ export default function ClanDetail() {
       navigator.clipboard.writeText(clan.invite_code);
       toast.success(t('clans.copy_link'));
     }
+  };
+
+  const isMember = clan?.clan_members.some(m => m.user_id === user?.id) ?? false;
+  const isCreator = clan?.creator_id === user?.id;
+
+  const handleLeaveClan = async () => {
+    if (!user || !clan) return;
+    try {
+      const { error } = await supabase
+        .from('clan_members')
+        .delete()
+        .eq('clan_id', clan.id)
+        .eq('user_id', user.id);
+      if (error) throw error;
+      toast.success(t('clans.left_success'));
+      navigate('/clans');
+    } catch {
+      toast.error(t('clans.leave_failed'));
+    }
+    setShowLeaveConfirm(false);
+  };
+
+  const handleDeleteClan = async () => {
+    if (!user || !clan) return;
+    try {
+      const { error } = await supabase.from('clans').delete().eq('id', clan.id);
+      if (error) throw error;
+      toast.success(t('clans.deleted_success'));
+      navigate('/clans');
+    } catch {
+      toast.error(t('clans.delete_failed'));
+    }
+    setShowDeleteConfirm(false);
   };
 
   if (loading) {
@@ -171,21 +210,51 @@ export default function ClanDetail() {
               </div>
             </div>
 
-            <button
-              onClick={copyInvite}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, alignSelf: isMobile ? 'stretch' : 'flex-start',
-                padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                background: 'rgba(255,214,10,0.1)', border: '1px solid rgba(255,214,10,0.3)',
-                color: '#FFD60A', cursor: 'pointer', justifyContent: 'center',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,214,10,0.2)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,214,10,0.1)'; }}
-            >
-              <Copy size={16} />
-              {t('clans.copy_link')}
-            </button>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8, alignSelf: isMobile ? 'stretch' : 'flex-start' }}>
+              <button
+                onClick={copyInvite}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                  background: 'rgba(255,214,10,0.1)', border: '1px solid rgba(255,214,10,0.3)',
+                  color: '#FFD60A', cursor: 'pointer', justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,214,10,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,214,10,0.1)'; }}
+              >
+                <Copy size={16} />
+                {t('clans.copy_link')}
+              </button>
+              {isMember && !isCreator && (
+                <button
+                  onClick={() => setShowLeaveConfirm(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                    background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)',
+                    color: '#FF4757', cursor: 'pointer', justifyContent: 'center',
+                  }}
+                >
+                  <LogOut size={16} />
+                  {t('clans.leave')}
+                </button>
+              )}
+              {isCreator && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                    background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)',
+                    color: '#FF4757', cursor: 'pointer', justifyContent: 'center',
+                  }}
+                >
+                  <Trash2 size={16} />
+                  {t('clans.delete_clan')}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* XP Bar */}
@@ -437,6 +506,74 @@ export default function ClanDetail() {
           </div>
         </div>
       </motion.div>
+
+      {/* Leave Clan Confirmation Modal */}
+      {showLeaveConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+        }} onClick={() => setShowLeaveConfirm(false)}>
+          <div style={{
+            background: '#141C2B', border: '1px solid rgba(255,71,87,0.3)',
+            borderRadius: 16, padding: 32, maxWidth: 420, width: '100%',
+          }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: '#E2E8F0', fontSize: 20, fontWeight: 700, marginBottom: 12 }}>
+              {t('clans.leave_title')}
+            </h3>
+            <p style={{ color: '#94A3B8', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              {t('clans.leave_message')}
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={handleLeaveClan} style={{
+                flex: 1, padding: '12px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: '#FF4757', color: '#fff', fontWeight: 700, fontSize: 14,
+              }}>
+                {t('clans.leave_confirm')}
+              </button>
+              <button onClick={() => setShowLeaveConfirm(false)} style={{
+                flex: 1, padding: '12px 0', borderRadius: 10, cursor: 'pointer',
+                background: 'transparent', border: '1px solid #334155', color: '#94A3B8', fontWeight: 700, fontSize: 14,
+              }}>
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Clan Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+        }} onClick={() => setShowDeleteConfirm(false)}>
+          <div style={{
+            background: '#141C2B', border: '1px solid rgba(255,71,87,0.3)',
+            borderRadius: 16, padding: 32, maxWidth: 420, width: '100%',
+          }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: '#FF4757', fontSize: 20, fontWeight: 700, marginBottom: 12 }}>
+              {t('clans.delete_title')}
+            </h3>
+            <p style={{ color: '#94A3B8', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              {t('clans.delete_message')}
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={handleDeleteClan} style={{
+                flex: 1, padding: '12px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: '#FF4757', color: '#fff', fontWeight: 700, fontSize: 14,
+              }}>
+                {t('common.delete')}
+              </button>
+              <button onClick={() => setShowDeleteConfirm(false)} style={{
+                flex: 1, padding: '12px 0', borderRadius: 10, cursor: 'pointer',
+                background: 'transparent', border: '1px solid #334155', color: '#94A3B8', fontWeight: 700, fontSize: 14,
+              }}>
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

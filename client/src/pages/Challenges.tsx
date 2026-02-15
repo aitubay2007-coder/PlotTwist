@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Swords, Check, X, Clock } from 'lucide-react';
+import { Swords, Check, X, Clock, Trophy, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -167,12 +167,16 @@ export default function Challenges() {
                     <span style={{
                       fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12,
                       background: challenge.status === 'pending' ? 'rgba(255,214,10,0.15)' :
-                        challenge.status === 'accepted' ? 'rgba(46,213,115,0.15)' : 'rgba(255,71,87,0.15)',
+                        challenge.status === 'accepted' ? 'rgba(46,213,115,0.15)' :
+                        challenge.status === 'resolved' ? 'rgba(139,92,246,0.15)' : 'rgba(255,71,87,0.15)',
                       color: challenge.status === 'pending' ? '#FFD60A' :
-                        challenge.status === 'accepted' ? '#2ED573' : '#FF4757',
+                        challenge.status === 'accepted' ? '#2ED573' :
+                        challenge.status === 'resolved' ? '#8B5CF6' : '#FF4757',
                     }}>
                       {challenge.status === 'pending' ? t('challenges.pending') :
-                       challenge.status === 'accepted' ? t('challenges.accepted') : t('challenges.declined')}
+                       challenge.status === 'accepted' ? t('challenges.accepted') :
+                       challenge.status === 'resolved' ? t('challenges.resolved') :
+                       t('challenges.declined')}
                     </span>
                   </div>
                   <p style={{ color: '#64748B', fontSize: 14, margin: '0 0 6px' }}>{challenge.predictions?.title}</p>
@@ -215,6 +219,15 @@ export default function Challenges() {
                 {challenge.status === 'pending' && tab === 'outgoing' && (
                   <div style={{ marginLeft: isMobile ? 0 : 16, alignSelf: isMobile ? 'flex-end' as const : undefined }}>
                     <Clock size={24} color="#FFD60A" />
+                  </div>
+                )}
+
+                {challenge.status === 'resolved' && (
+                  <div style={{ marginLeft: isMobile ? 0 : 16, alignSelf: isMobile ? 'flex-end' as const : undefined, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Trophy size={20} color="#8B5CF6" />
+                    <span style={{ color: '#8B5CF6', fontWeight: 700, fontSize: 14 }}>
+                      {t('challenges.resolved')}
+                    </span>
                   </div>
                 )}
               </div>

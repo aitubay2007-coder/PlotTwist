@@ -14,6 +14,7 @@ import ClanDetail from './pages/ClanDetail';
 import Challenges from './pages/Challenges';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
+import Transactions from './pages/Transactions';
 
 export default function App() {
   const { initialize, isLoading } = useAuthStore();
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="/challenges" element={<Challenges />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/transactions" element={<Transactions />} />
         </Routes>
       </main>
       <BottomNav />

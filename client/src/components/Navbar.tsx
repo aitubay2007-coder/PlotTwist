@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Menu, X, Coins, Globe, User, LogOut, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import NotificationBell from './NotificationBell';
 
 const NAV = [
   { to: '/', label: 'nav.home' },
@@ -73,24 +74,28 @@ export default function Navbar() {
                 {i18n.language === 'en' ? 'EN' : 'RU'}
               </button>
 
-              {/* Mobile: show coins badge */}
+              {/* Mobile: show coins badge + bell */}
               {isMobile && isAuthenticated && user && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  padding: '4px 10px', borderRadius: 20,
-                  background: 'rgba(255,214,10,0.1)',
-                  border: '1px solid rgba(255,214,10,0.2)',
-                }}>
-                  <Coins size={13} color="#FFD60A" />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#FFD60A' }}>
-                    {user.coins.toLocaleString()}
-                  </span>
-                </div>
+                <>
+                  <NotificationBell />
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    padding: '4px 10px', borderRadius: 20,
+                    background: 'rgba(255,214,10,0.1)',
+                    border: '1px solid rgba(255,214,10,0.2)',
+                  }}>
+                    <Coins size={13} color="#FFD60A" />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#FFD60A' }}>
+                      {user.coins.toLocaleString()}
+                    </span>
+                  </div>
+                </>
               )}
 
               {/* Desktop: full user section */}
               {!isMobile && isAuthenticated && user && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <NotificationBell />
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '5px 12px', borderRadius: 8,
