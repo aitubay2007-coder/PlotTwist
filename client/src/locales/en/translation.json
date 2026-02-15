@@ -224,5 +224,14 @@
     "sport": "Sport",
     "music": "Music",
     "other": "Other"
+  },
+  "chat": {
+    "title": "Clan Chat",
+    "placeholder": "Type a message...",
+    "empty": "No messages yet. Say hi to your clan!",
+    "login_required": "Log in to chat with your clan",
+    "you": "You",
+    "yesterday": "Yesterday",
+    "messages_count": "messages"
   }
 }

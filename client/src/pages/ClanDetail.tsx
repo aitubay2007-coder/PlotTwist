@@ -6,6 +6,7 @@ import { ArrowLeft, Users, Copy, Crown, Trophy, TrendingUp, Coins, Target, Zap }
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { ClanBadge, ClanXPBar, ClanLevelShield } from '../components/ClanBadge';
+import ClanChat from '../components/ClanChat';
 import { getClanLevel } from '../types';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
@@ -344,6 +345,11 @@ export default function ClanDetail() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* ===== CLAN CHAT ===== */}
+        <div style={{ marginBottom: 20 }}>
+          <ClanChat clanId={clan.id} />
         </div>
 
         {/* ===== FULL MEMBERS LIST ===== */}
