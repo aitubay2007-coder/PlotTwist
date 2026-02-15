@@ -25,7 +25,7 @@ interface Show {
 export default function CreatePrediction() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -34,6 +34,11 @@ export default function CreatePrediction() {
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
   const [showsLoading, setShowsLoading] = useState(true);
+
+  // Auth guard
+  useEffect(() => {
+    if (!isAuthenticated) navigate('/login', { replace: true });
+  }, [isAuthenticated, navigate]);
 
   // Fetch shows from Supabase
   useEffect(() => {

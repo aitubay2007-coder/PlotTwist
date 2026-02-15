@@ -103,7 +103,7 @@ export default function Navbar() {
                     border: '1px solid rgba(255,214,10,0.25)',
                   }}>
                     <Coins size={14} color="#FFD60A" />
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#FFD60A' }}>{user.coins}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#FFD60A' }}>{user.coins.toLocaleString()}</span>
                   </div>
                   <Link to="/profile" style={{
                     display: 'flex', alignItems: 'center', gap: 6,

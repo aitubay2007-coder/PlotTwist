@@ -163,7 +163,7 @@ export default function Clans() {
         .maybeSingle();
 
       if (existing) {
-        toast.error(t('clans.joined_success'));
+        toast.error(t('clans.already_joined'));
         return;
       }
 

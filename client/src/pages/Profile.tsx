@@ -9,8 +9,18 @@ import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
 const COUNTRIES = [
-  'Kazakhstan', 'United States', 'Russia', 'Japan', 'South Korea',
-  'Turkey', 'Germany', 'Brazil', 'United Kingdom', 'France', 'China', 'India',
+  { code: 'KZ', label: 'Kazakhstan' },
+  { code: 'US', label: 'United States' },
+  { code: 'RU', label: 'Russia' },
+  { code: 'JP', label: 'Japan' },
+  { code: 'KR', label: 'South Korea' },
+  { code: 'TR', label: 'Turkey' },
+  { code: 'DE', label: 'Germany' },
+  { code: 'BR', label: 'Brazil' },
+  { code: 'GB', label: 'United Kingdom' },
+  { code: 'FR', label: 'France' },
+  { code: 'CN', label: 'China' },
+  { code: 'IN', label: 'India' },
 ];
 
 export default function Profile() {
@@ -37,25 +47,21 @@ export default function Profile() {
   const handleDailyBonus = async () => {
     setClaimingBonus(true);
     try {
-      // Add 50 coins via RPC
-      const { error } = await supabase.rpc('increment_coins', {
+      const { data, error } = await supabase.rpc('claim_daily_bonus', {
         user_id_param: user.id,
-        amount_param: 50,
       });
       if (error) throw error;
-
-      // Log the transaction
-      await supabase.from('transactions').insert({
-        user_id: user.id,
-        type: 'daily_bonus',
-        amount: 50,
-        description: 'Daily bonus',
-      });
-
-      // Instantly show +50 in UI
+      const result = data as { success?: boolean; error?: string };
+      if (result.error === 'already_claimed') {
+        toast.error(t('profile.bonus_already_claimed'));
+        return;
+      }
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
       adjustCoins(50);
       toast.success(t('profile.bonus_claimed'));
-      // Sync real balance in background
       fetchProfile();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('profile.bonus_failed'));
@@ -356,7 +362,7 @@ export default function Profile() {
                   }}
                 >
                   <option value="">{t('profile.select_country')}</option>
-                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
                 </select>
               </div>
               <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>

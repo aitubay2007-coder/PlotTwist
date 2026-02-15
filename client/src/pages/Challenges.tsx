@@ -55,12 +55,15 @@ export default function Challenges() {
 
   const handleAccept = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('challenges')
-        .update({ status: 'accepted' })
-        .eq('id', id);
-
+      const { data, error } = await supabase.rpc('accept_challenge', {
+        challenge_id_param: id,
+      });
       if (error) throw error;
+      const result = data as { success?: boolean; error?: string };
+      if (result.error) {
+        toast.error(result.error === 'Insufficient coins' ? t('predictions.insufficient_coins') : result.error);
+        return;
+      }
       toast.success(t('challenges.accepted_success'));
       fetchChallenges();
     } catch (err: unknown) {

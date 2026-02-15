@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -37,11 +37,11 @@ export default function BetModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset amount when modal opens or balance changes
-  if (isOpen && amount > maxBet && maxBet >= MIN_BET) {
-    setAmount(maxBet);
-  } else if (isOpen && amount > maxBet) {
-    setAmount(MIN_BET);
-  }
+  useEffect(() => {
+    if (isOpen && amount > maxBet) {
+      setAmount(maxBet >= MIN_BET ? maxBet : MIN_BET);
+    }
+  }, [isOpen, maxBet]);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
