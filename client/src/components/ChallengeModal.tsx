@@ -86,15 +86,19 @@ export default function ChallengeModal({
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [opponentUsername, user?.id]);
 
-  // Close suggestions on outside click
+  // Close suggestions on outside click/touch
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
         setShowSuggestions(false);
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
   }, []);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -141,7 +145,7 @@ export default function ChallengeModal({
     amount <= maxAmount;
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '12px 16px', borderRadius: 10, fontSize: 14,
+    width: '100%', padding: '12px 16px', borderRadius: 10, fontSize: 16,
     background: '#0B1120', border: '1px solid #243044', color: '#E2E8F0', outline: 'none',
   };
 
@@ -159,9 +163,10 @@ export default function ChallengeModal({
           onClick={handleOverlayClick}
           style={{
             position: 'fixed', inset: 0, zIndex: 50,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
             background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-            padding: 16,
+            padding: 16, paddingTop: 40,
+            overflowY: 'auto', WebkitOverflowScrolling: 'touch',
           }}
         >
           <motion.div
@@ -203,6 +208,10 @@ export default function ChallengeModal({
                   onChange={(e) => { setOpponentUsername(e.target.value); setShowSuggestions(true); }}
                   onFocus={() => setShowSuggestions(true)}
                   placeholder="@username"
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   style={{ ...inputStyle, paddingLeft: 36 }}
                 />
               </div>
@@ -229,7 +238,7 @@ export default function ChallengeModal({
                     <button
                       key={s.id}
                       type="button"
-                      onClick={() => handleSelectUser(s.username)}
+                      onPointerDown={(e) => { e.preventDefault(); handleSelectUser(s.username); }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                         padding: '10px 14px', background: 'transparent', border: 'none',
