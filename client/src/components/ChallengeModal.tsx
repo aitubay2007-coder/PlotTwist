@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 
 interface PredictionOption {
   id: string;
   title: string;
+}
+
+interface UserSuggestion {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+  reputation: number;
 }
 
 interface ChallengeModalProps {
@@ -39,7 +47,55 @@ export default function ChallengeModal({
   const [amount, setAmount] = useState(MIN_AMOUNT);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // User search suggestions
+  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
   const maxAmount = user?.coins ?? 0;
+
+  // Search users when typing
+  useEffect(() => {
+    const query = opponentUsername.replace(/^@/, '').trim();
+    if (query.length < 1) {
+      setSuggestions([]);
+      return;
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url, reputation')
+          .ilike('username', `%${query}%`)
+          .neq('id', user?.id ?? '')
+          .order('reputation', { ascending: false })
+          .limit(6);
+        setSuggestions((data as UserSuggestion[]) || []);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [opponentUsername, user?.id]);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
@@ -50,7 +106,15 @@ export default function ChallengeModal({
     setSelectedPredictionId(predictionId ?? '');
     setPosition('yes');
     setAmount(MIN_AMOUNT);
+    setSuggestions([]);
+    setShowSuggestions(false);
     onClose();
+  };
+
+  const handleSelectUser = (username: string) => {
+    setOpponentUsername(username);
+    setShowSuggestions(false);
+    setSuggestions([]);
   };
 
   const handleSend = async () => {
@@ -128,16 +192,74 @@ export default function ChallengeModal({
               </button>
             </div>
 
-            {/* Opponent */}
-            <div style={{ marginBottom: 16 }}>
+            {/* Opponent with autocomplete */}
+            <div style={{ marginBottom: 16, position: 'relative' }} ref={suggestionsRef}>
               <label style={labelStyle}>{t('challenges.select_user')}</label>
-              <input
-                type="text"
-                value={opponentUsername}
-                onChange={(e) => setOpponentUsername(e.target.value)}
-                placeholder="@username"
-                style={inputStyle}
-              />
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+                <input
+                  type="text"
+                  value={opponentUsername}
+                  onChange={(e) => { setOpponentUsername(e.target.value); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder="@username"
+                  style={{ ...inputStyle, paddingLeft: 36 }}
+                />
+              </div>
+
+              {/* Suggestions dropdown */}
+              {showSuggestions && opponentUsername.replace(/^@/, '').trim().length >= 1 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 60,
+                  background: '#1C2538', border: '1px solid #243044', borderRadius: 10,
+                  marginTop: 4, maxHeight: 220, overflowY: 'auto',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                }}>
+                  {searchLoading && (
+                    <div style={{ padding: '12px 14px', color: '#64748B', fontSize: 13, textAlign: 'center' }}>
+                      {t('common.loading')}
+                    </div>
+                  )}
+                  {!searchLoading && suggestions.length === 0 && (
+                    <div style={{ padding: '12px 14px', color: '#64748B', fontSize: 13, textAlign: 'center' }}>
+                      {t('challenges.user_not_found')}
+                    </div>
+                  )}
+                  {!searchLoading && suggestions.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSelectUser(s.username)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                        padding: '10px 14px', background: 'transparent', border: 'none',
+                        borderBottom: '1px solid #243044', cursor: 'pointer',
+                        textAlign: 'left', transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#243044')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      {/* Avatar */}
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: 'rgba(255,214,10,0.15)', color: '#FFD60A',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 700, flexShrink: 0,
+                      }}>
+                        {s.username[0]?.toUpperCase() || '?'}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ color: '#E2E8F0', fontSize: 14, fontWeight: 500 }}>
+                          @{s.username}
+                        </div>
+                        <div style={{ color: '#64748B', fontSize: 11 }}>
+                          ⭐ {s.reputation.toLocaleString()}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Prediction selector (when predictionId not provided) */}
