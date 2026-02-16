@@ -236,12 +236,12 @@ function PlayerLeaderboardTable({ players, loading, isMobile, t }: {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={{ color: '#E2E8F0', fontWeight: 700 }}>{player.reputation.toLocaleString()}</span>
+                <span style={{ color: '#E2E8F0', fontWeight: 700 }}>{(player.reputation ?? 0).toLocaleString()}</span>
               </div>
               {!isMobile && (
                 <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
                   <Coins size={16} color="#FFD60A" />
-                  <span style={{ color: '#FFD60A', fontWeight: 700 }}>{player.coins.toLocaleString()}</span>
+                  <span style={{ color: '#FFD60A', fontWeight: 700 }}>{(player.coins ?? 0).toLocaleString()}</span>
                 </div>
               )}
             </motion.div>
