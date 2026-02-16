@@ -49,7 +49,7 @@ export default function Dashboard() {
   }, [sort]);
 
   const filtered = predictions.filter(p =>
-    p.title.toLowerCase().includes(search.toLowerCase())
+    (p.title ?? '').toLowerCase().includes(search.toLowerCase())
   );
   const featured = filtered.slice(0, 2);
   const rest = filtered.slice(2);

@@ -251,7 +251,7 @@ export default function PredictionDetail() {
                         opacity: resolving ? 0.5 : 1,
                       }}
                     >
-                      {resolving ? t('common.loading') : t('predictions.confirm')}
+                      {resolving ? t('common.loading') : t('common.confirm')}
                     </button>
                     <button
                       onClick={() => setShowResolveConfirm(null)}
