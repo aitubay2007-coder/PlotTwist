@@ -351,13 +351,23 @@ export default function PredictionDetail() {
               return;
             }
 
-            // Check balance
+            // Check balance client-side
             if (params.amount > user.coins) {
               toast.error(t('predictions.insufficient_coins'));
               return;
             }
 
-            // Insert challenge
+            // Deduct coins FIRST (atomic, will fail if insufficient)
+            const { error: deductErr } = await supabase.rpc('increment_coins', {
+              user_id_param: user.id,
+              amount_param: -params.amount,
+            });
+            if (deductErr) {
+              toast.error(t('predictions.insufficient_coins'));
+              return;
+            }
+
+            // Insert challenge (coins already deducted)
             const { error: insertErr } = await supabase.from('challenges').insert({
               challenger_id: user.id,
               challenged_id: opponent.id,
@@ -367,13 +377,14 @@ export default function PredictionDetail() {
               amount: params.amount,
               status: 'pending',
             });
-            if (insertErr) throw insertErr;
-
-            // Deduct coins from challenger
-            await supabase.rpc('increment_coins', {
-              user_id_param: user.id,
-              amount_param: -params.amount,
-            });
+            if (insertErr) {
+              // Refund coins if insert failed
+              await supabase.rpc('increment_coins', {
+                user_id_param: user.id,
+                amount_param: params.amount,
+              });
+              throw insertErr;
+            }
 
             // Log transaction
             await supabase.from('transactions').insert({

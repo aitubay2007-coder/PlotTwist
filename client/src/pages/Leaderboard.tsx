@@ -40,12 +40,17 @@ export default function Leaderboard() {
 
       const { data, error } = await query;
 
-      if (error || !data || data.length === 0) {
+      if (error) {
+        console.error('Leaderboard fetch error:', error);
+        setPlayers(getDemoLeaderboard());
+      } else if (!data || data.length === 0) {
+        // No real users yet — show demo as placeholder
         setPlayers(getDemoLeaderboard());
       } else {
         setPlayers(data as Profile[]);
       }
-    } catch {
+    } catch (err) {
+      console.error('Leaderboard fetch failed:', err);
       setPlayers(getDemoLeaderboard());
     } finally {
       setLoading(false);
@@ -56,12 +61,16 @@ export default function Leaderboard() {
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('get_clan_leaderboard');
-      if (error || !data || data.length === 0) {
+      if (error) {
+        console.error('Clan leaderboard fetch error:', error);
+        setClans(getDemoClanLeaderboard());
+      } else if (!data || data.length === 0) {
         setClans(getDemoClanLeaderboard());
       } else {
         setClans(data as ClanLeaderboardEntry[]);
       }
-    } catch {
+    } catch (err) {
+      console.error('Clan leaderboard fetch failed:', err);
       setClans(getDemoClanLeaderboard());
     } finally {
       setLoading(false);

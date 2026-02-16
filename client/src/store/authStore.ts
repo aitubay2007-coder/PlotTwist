@@ -109,6 +109,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw new AuthError('err_register_failed', error.message);
     }
 
+    // Supabase returns fake success (empty identities) when email already exists
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      throw new AuthError('err_already_registered');
+    }
+
+    const userId = data.user?.id;
+    if (!userId) throw new AuthError('err_no_user_id');
+
     // 2. Auto-login if no session
     if (!data.session) {
       const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
@@ -117,9 +125,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw new AuthError('err_auto_login_failed');
       }
     }
-
-    const userId = data.user?.id;
-    if (!userId) throw new AuthError('err_no_user_id');
 
     // 3. Wait for trigger profile
     for (let i = 0; i < 8; i++) {
