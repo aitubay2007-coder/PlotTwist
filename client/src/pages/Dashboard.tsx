@@ -33,8 +33,10 @@ export default function Dashboard() {
         else if (sort === 'ending_soon') query = query.order('deadline', { ascending: true });
 
         const { data, error } = await query;
-        if (error || !data || data.length === 0) {
+        if (error || !data) {
           setPredictions(DEMO);
+        } else if (data.length === 0) {
+          setPredictions(DEMO); // Show demo as placeholder when no real predictions yet
         } else {
           setPredictions(data as unknown as Prediction[]);
         }
@@ -264,7 +266,7 @@ export default function Dashboard() {
                 gap: isMobile ? 10 : 16,
               }}
             >
-              {(rest.length > 0 ? rest : filtered).map((p, i) => (
+              {rest.map((p, i) => (
                 <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                   <PredCard prediction={p} isMobile={isMobile} />
                 </motion.div>

@@ -137,18 +137,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     }
 
-    // 4. Manual fallback
+    // 4. Manual fallback — trigger may have fired late, handle duplicate key
     const { data: inserted, error: insertErr } = await supabase
       .from('profiles')
       .insert({ id: userId, username, coins: 1000 })
       .select()
       .single();
     if (insertErr) {
+      // Duplicate key = trigger created the profile just in time
+      if (insertErr.code === '23505') {
+        const { data: existing } = await supabase.from('profiles').select('*').eq('id', userId).single();
+        if (existing) {
+          set({ user: existing as Profile, isAuthenticated: true });
+          return;
+        }
+      }
       console.error('[PT] Manual profile insert failed:', insertErr);
       throw new AuthError('err_register_failed', insertErr.message);
     }
     set({
-      user: inserted as Profile || { id: userId, username, display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: new Date().toISOString() },
+      user: (inserted as Profile) || { id: userId, username, display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: new Date().toISOString() },
       isAuthenticated: true,
     });
   },

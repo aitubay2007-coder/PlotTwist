@@ -78,30 +78,15 @@ export default function Challenges() {
   const handleDecline = async (id: string) => {
     setActionId(id);
     try {
-      // Find the challenge to get the amount and challenger_id for refund
-      const challenge = challenges.find(c => c.id === id);
-
-      const { error } = await supabase
-        .from('challenges')
-        .update({ status: 'declined' })
-        .eq('id', id);
-
+      const { data, error } = await supabase.rpc('decline_challenge', {
+        challenge_id_param: id,
+      });
       if (error) throw error;
-
-      // Refund the challenger's escrowed coins
-      if (challenge) {
-        await supabase.rpc('increment_coins', {
-          user_id_param: challenge.challenger_id,
-          amount_param: challenge.amount,
-        });
-        await supabase.from('transactions').insert({
-          user_id: challenge.challenger_id,
-          type: 'challenge_refund',
-          amount: challenge.amount,
-          description: 'Challenge declined — refund',
-        });
+      const result = data as { success?: boolean; error?: string };
+      if (result.error) {
+        toast.error(result.error);
+        return;
       }
-
       toast.success(t('challenges.declined_success'));
       fetchChallenges();
     } catch (err: unknown) {

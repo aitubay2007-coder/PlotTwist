@@ -36,7 +36,7 @@ export function ClanXPBar({ xp, level, showLabel = true }: { xp: number; level: 
   const currentMin = getCurrentLevelXP(level);
   const nextTarget = getNextLevelXP(level);
   const isMaxLevel = level >= 5;
-  const progress = isMaxLevel ? 100 : Math.min(100, ((xp - currentMin) / (nextTarget - currentMin)) * 100);
+  const progress = isMaxLevel ? 100 : Math.max(0, Math.min(100, ((xp - currentMin) / (nextTarget - currentMin || 1)) * 100));
 
   return (
     <div style={{ width: '100%' }}>
