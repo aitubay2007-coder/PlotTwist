@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, MessageCircle, ChevronDown } from 'lucide-react';
+import { Send, MessageCircle, ChevronDown, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
@@ -30,6 +30,8 @@ export default function ClanChat({ clanId }: { clanId: string }) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
+  const [hoverMsgId, setHoverMsgId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -136,6 +138,31 @@ export default function ClanChat({ clanId }: { clanId: string }) {
     setSending(false);
   };
 
+  // Delete message
+  const handleDelete = async (msgId: string) => {
+    if (deletingId) return;
+    setDeletingId(msgId);
+    try {
+      const { error } = await supabase
+        .from('clan_messages')
+        .delete()
+        .eq('id', msgId);
+
+      if (error) {
+        console.error('Delete message error:', error);
+        toast.error(t('common.error'));
+      } else {
+        setMessages(prev => prev.filter(m => m.id !== msgId));
+        toast.success(t('chat.deleted'));
+      }
+    } catch {
+      toast.error(t('common.error'));
+    } finally {
+      setDeletingId(null);
+      setHoverMsgId(null);
+    }
+  };
+
   // Format time
   const formatTime = (iso: string) => {
     const d = new Date(iso);
@@ -222,6 +249,7 @@ export default function ClanChat({ clanId }: { clanId: string }) {
             {messages.map((msg, i) => {
               const mine = isMe(msg);
               const newGroup = isNewGroup(i);
+              const showDelete = mine && hoverMsgId === msg.id;
               return (
                 <div key={msg.id} style={{
                   display: 'flex', flexDirection: 'column',
@@ -252,24 +280,64 @@ export default function ClanChat({ clanId }: { clanId: string }) {
                       </span>
                     </div>
                   )}
-                  {/* Message bubble */}
-                  <div style={{
-                    maxWidth: '78%',
-                    padding: '8px 14px',
-                    borderRadius: mine
-                      ? '14px 14px 4px 14px'
-                      : '14px 14px 14px 4px',
-                    background: mine
-                      ? 'rgba(255,214,10,0.12)'
-                      : '#0B1120',
-                    border: mine
-                      ? '1px solid rgba(255,214,10,0.2)'
-                      : '1px solid #1C2538',
-                    color: '#E2E8F0',
-                    fontSize: 14, lineHeight: 1.45,
-                    wordBreak: 'break-word',
-                  }}>
-                    {msg.content}
+                  {/* Message bubble with delete */}
+                  <div
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      flexDirection: mine ? 'row-reverse' : 'row',
+                      maxWidth: '85%',
+                    }}
+                    onMouseEnter={() => mine && setHoverMsgId(msg.id)}
+                    onMouseLeave={() => setHoverMsgId(null)}
+                    onClick={() => {
+                      if (mine && isMobile) {
+                        setHoverMsgId(prev => prev === msg.id ? null : msg.id);
+                      }
+                    }}
+                  >
+                    <div style={{
+                      maxWidth: showDelete ? 'calc(100% - 36px)' : '100%',
+                      padding: '8px 14px',
+                      borderRadius: mine
+                        ? '14px 14px 4px 14px'
+                        : '14px 14px 14px 4px',
+                      background: mine
+                        ? 'rgba(255,214,10,0.12)'
+                        : '#0B1120',
+                      border: mine
+                        ? '1px solid rgba(255,214,10,0.2)'
+                        : '1px solid #1C2538',
+                      color: '#E2E8F0',
+                      fontSize: 14, lineHeight: 1.45,
+                      wordBreak: 'break-word' as const,
+                    }}>
+                      {msg.content}
+                    </div>
+                    {showDelete && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(t('chat.delete_confirm'))) {
+                            handleDelete(msg.id);
+                          }
+                        }}
+                        disabled={deletingId === msg.id}
+                        style={{
+                          width: 30, height: 30, borderRadius: 8,
+                          background: 'rgba(239,68,68,0.15)',
+                          border: '1px solid rgba(239,68,68,0.3)',
+                          color: '#EF4444',
+                          cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                          opacity: deletingId === msg.id ? 0.5 : 1,
+                          transition: 'all 0.15s',
+                        }}
+                        title={t('chat.delete')}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );

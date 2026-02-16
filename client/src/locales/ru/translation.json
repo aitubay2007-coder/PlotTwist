@@ -300,6 +300,9 @@
     "login_required": "Войди, чтобы писать в чат клана",
     "you": "Ты",
     "yesterday": "Вчера",
-    "messages_count": "сообщений"
+    "messages_count": "сообщений",
+    "delete": "Удалить",
+    "delete_confirm": "Удалить это сообщение?",
+    "deleted": "Сообщение удалено"
   }
 }

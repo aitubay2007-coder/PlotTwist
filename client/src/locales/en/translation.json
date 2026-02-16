@@ -300,6 +300,9 @@
     "login_required": "Log in to chat with your clan",
     "you": "You",
     "yesterday": "Yesterday",
-    "messages_count": "messages"
+    "messages_count": "messages",
+    "delete": "Delete",
+    "delete_confirm": "Delete this message?",
+    "deleted": "Message deleted"
   }
 }
