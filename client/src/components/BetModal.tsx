@@ -189,12 +189,17 @@ export default function BetModal({
 
                 {/* Potential winnings */}
                 {position && amount >= MIN_BET && (
-                  <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 16 }}>
-                    {t('predictions.potential_winnings')}:{' '}
-                    <span style={{ color: '#2ED573', fontWeight: 600 }}>
-                      +{potentialProfit.toFixed(0)} {t('common.coins')}
-                    </span>
-                  </p>
+                  <div style={{ marginBottom: 16 }}>
+                    <p style={{ color: '#94A3B8', fontSize: 13, margin: '0 0 6px' }}>
+                      {t('predictions.potential_winnings')}:{' '}
+                      <span style={{ color: '#2ED573', fontWeight: 600 }}>
+                        +{potentialProfit.toFixed(0)} {t('common.coins')}
+                      </span>
+                    </p>
+                    <p style={{ color: '#475569', fontSize: 11, margin: 0, lineHeight: 1.4 }}>
+                      {t('bet_tooltip.payout_explanation')}
+                    </p>
+                  </div>
                 )}
               </>
             )}

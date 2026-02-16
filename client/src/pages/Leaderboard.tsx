@@ -369,16 +369,16 @@ function ClanLeaderboardTable({ clans, loading, isMobile, t }: {
 
 function getDemoLeaderboard(): Profile[] {
   return [
-    { id: '1', username: 'NakamaCrew', display_name: null, avatar_url: null, coins: 125000, reputation: 9850, country: 'JP', created_at: '', last_daily_bonus: null },
-    { id: '2', username: 'KDramaKing', display_name: null, avatar_url: null, coins: 98000, reputation: 8720, country: 'KR', created_at: '', last_daily_bonus: null },
-    { id: '3', username: 'MMAExpert', display_name: null, avatar_url: null, coins: 87000, reputation: 7650, country: 'KZ', created_at: '', last_daily_bonus: null },
-    { id: '4', username: 'WinterIsComing', display_name: null, avatar_url: null, coins: 76000, reputation: 6890, country: 'US', created_at: '', last_daily_bonus: null },
-    { id: '5', username: 'GrandLineGuru', display_name: null, avatar_url: null, coins: 65000, reputation: 6340, country: 'TR', created_at: '', last_daily_bonus: null },
-    { id: '6', username: 'YeezyFan', display_name: null, avatar_url: null, coins: 54000, reputation: 5120, country: 'US', created_at: '', last_daily_bonus: null },
-    { id: '7', username: 'AnimeOracle', display_name: null, avatar_url: null, coins: 48000, reputation: 4870, country: 'JP', created_at: '', last_daily_bonus: null },
-    { id: '8', username: 'PlotMaster', display_name: null, avatar_url: null, coins: 42000, reputation: 4350, country: 'DE', created_at: '', last_daily_bonus: null },
-    { id: '9', username: 'SeriesNerd', display_name: null, avatar_url: null, coins: 38000, reputation: 3980, country: 'BR', created_at: '', last_daily_bonus: null },
-    { id: '10', username: 'FanTheory99', display_name: null, avatar_url: null, coins: 35000, reputation: 3650, country: 'RU', created_at: '', last_daily_bonus: null },
+    { id: '1', username: 'NakamaCrew', display_name: null, avatar_url: null, coins: 125000, reputation: 9850, country: 'JP', created_at: '', last_daily_bonus: null, is_admin: false },
+    { id: '2', username: 'KDramaKing', display_name: null, avatar_url: null, coins: 98000, reputation: 8720, country: 'KR', created_at: '', last_daily_bonus: null, is_admin: false },
+    { id: '3', username: 'MMAExpert', display_name: null, avatar_url: null, coins: 87000, reputation: 7650, country: 'KZ', created_at: '', last_daily_bonus: null, is_admin: false },
+    { id: '4', username: 'WinterIsComing', display_name: null, avatar_url: null, coins: 76000, reputation: 6890, country: 'US', created_at: '', last_daily_bonus: null, is_admin: false },
+    { id: '5', username: 'GrandLineGuru', display_name: null, avatar_url: null, coins: 65000, reputation: 6340, country: 'TR', created_at: '', last_daily_bonus: null, is_admin: false },
+    { id: '6', username: 'YeezyFan', display_name: null, avatar_url: null, coins: 54000, reputation: 5120, country: 'US', created_at: '', last_daily_bonus: null, is_admin: false },
+    { id: '7', username: 'AnimeOracle', display_name: null, avatar_url: null, coins: 48000, reputation: 4870, country: 'JP', created_at: '', last_daily_bonus: null, is_admin: false },
+    { id: '8', username: 'PlotMaster', display_name: null, avatar_url: null, coins: 42000, reputation: 4350, country: 'DE', created_at: '', last_daily_bonus: null, is_admin: false },
+    { id: '9', username: 'SeriesNerd', display_name: null, avatar_url: null, coins: 38000, reputation: 3980, country: 'BR', created_at: '', last_daily_bonus: null, is_admin: false },
+    { id: '10', username: 'FanTheory99', display_name: null, avatar_url: null, coins: 35000, reputation: 3650, country: 'RU', created_at: '', last_daily_bonus: null, is_admin: false },
   ];
 }
 

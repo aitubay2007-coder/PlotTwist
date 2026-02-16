@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Zap } from 'lucide-react';
+import { Zap, Globe, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -31,6 +31,7 @@ export default function CreatePrediction() {
   const [category, setCategory] = useState('');
   const [showName, setShowName] = useState('');
   const [shows, setShows] = useState<Show[]>([]);
+  const [mode, setMode] = useState<'official' | 'unofficial'>('official');
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -105,6 +106,7 @@ export default function CreatePrediction() {
         description: description || null,
         show_id: showId,
         creator_id: user.id,
+        mode,
         deadline: new Date(deadline).toISOString(),
       });
       if (error) throw error;
@@ -128,6 +130,51 @@ export default function CreatePrediction() {
         </h1>
 
         <form onSubmit={handleSubmit} style={{ background: '#141C2B', border: '1px solid #243044', borderRadius: 16, padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+          {/* Mode Selector */}
+          <div>
+            <Label>{t('create.mode_label')} *</Label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setMode('official')}
+                style={{
+                  padding: '14px 12px', borderRadius: 12, cursor: 'pointer',
+                  border: mode === 'official' ? '2px solid #FFD60A' : '2px solid #243044',
+                  background: mode === 'official' ? 'rgba(255,214,10,0.08)' : '#0B1120',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Globe size={22} color={mode === 'official' ? '#FFD60A' : '#64748B'} />
+                <span style={{ fontWeight: 700, fontSize: 14, color: mode === 'official' ? '#FFD60A' : '#94A3B8' }}>
+                  {t('create.mode_official')}
+                </span>
+                <span style={{ fontSize: 11, color: '#64748B', textAlign: 'center', lineHeight: 1.3 }}>
+                  {t('create.mode_official_desc')}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('unofficial')}
+                style={{
+                  padding: '14px 12px', borderRadius: 12, cursor: 'pointer',
+                  border: mode === 'unofficial' ? '2px solid #E040FB' : '2px solid #243044',
+                  background: mode === 'unofficial' ? 'rgba(224,64,251,0.08)' : '#0B1120',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Users size={22} color={mode === 'unofficial' ? '#E040FB' : '#64748B'} />
+                <span style={{ fontWeight: 700, fontSize: 14, color: mode === 'unofficial' ? '#E040FB' : '#94A3B8' }}>
+                  {t('create.mode_unofficial')}
+                </span>
+                <span style={{ fontSize: 11, color: '#64748B', textAlign: 'center', lineHeight: 1.3 }}>
+                  {t('create.mode_unofficial_desc')}
+                </span>
+              </button>
+            </div>
+          </div>
 
           {/* Prediction Title */}
           <div>

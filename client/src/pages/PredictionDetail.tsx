@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Swords, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Swords, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle, Globe, Users, Shield, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import BetModal from '../components/BetModal';
 import ChallengeModal from '../components/ChallengeModal';
 import PredictionComments from '../components/PredictionComments';
-import type { Prediction } from '../types';
+import type { Prediction, PredictionDispute } from '../types';
 import { awardClanXP } from '../lib/clanXP';
 import toast from 'react-hot-toast';
 
@@ -23,6 +23,9 @@ export default function PredictionDetail() {
   const [challengeOpen, setChallengeOpen] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [showResolveConfirm, setShowResolveConfirm] = useState<'yes' | 'no' | null>(null);
+  const [disputes, setDisputes] = useState<PredictionDispute[]>([]);
+  const [disputing, setDisputing] = useState(false);
+  const [userHasBet, setUserHasBet] = useState(false);
   const isMobile = useIsMobile();
 
   const fetchPrediction = async () => {
@@ -39,6 +42,26 @@ export default function PredictionDetail() {
         setPrediction(null);
       } else {
         setPrediction(data as unknown as Prediction);
+
+        // Fetch disputes for unofficial predictions
+        if (data.mode === 'unofficial' && (data.status === 'resolved_yes' || data.status === 'resolved_no')) {
+          const { data: disputeData } = await supabase
+            .from('prediction_disputes')
+            .select('*')
+            .eq('prediction_id', id);
+          setDisputes((disputeData as PredictionDispute[]) || []);
+        }
+
+        // Check if current user has a bet on this prediction
+        if (user?.id) {
+          const { data: betData } = await supabase
+            .from('bets')
+            .select('id')
+            .eq('prediction_id', id)
+            .eq('user_id', user.id)
+            .limit(1);
+          setUserHasBet(!!betData && betData.length > 0);
+        }
       }
     } catch {
       setPrediction(null);
@@ -47,7 +70,7 @@ export default function PredictionDetail() {
     }
   };
 
-  useEffect(() => { if (id) fetchPrediction(); }, [id]);
+  useEffect(() => { if (id) fetchPrediction(); }, [id, user?.id]);
 
   const handleBet = async (position: string, amount: number) => {
     if (!user || !prediction) return;
@@ -123,6 +146,37 @@ export default function PredictionDetail() {
     }
   };
 
+  const handleDispute = async (vote: 'yes' | 'no') => {
+    if (!user || !prediction || disputing) return;
+    setDisputing(true);
+    try {
+      const { data, error } = await supabase.rpc('dispute_prediction', {
+        pred_id: prediction.id,
+        vote_param: vote,
+      });
+      if (error) throw error;
+      const result = data as { success?: boolean; error?: string };
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(t('predictions.dispute_submitted'));
+        fetchPrediction();
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t('predictions.dispute_failed'));
+    } finally {
+      setDisputing(false);
+    }
+  };
+
+  // Compute dispute window remaining hours
+  const getDisputeHoursLeft = () => {
+    if (!prediction?.resolved_at) return 0;
+    const resolvedTime = new Date(prediction.resolved_at).getTime();
+    const deadline = resolvedTime + 24 * 60 * 60 * 1000;
+    return Math.max(0, Math.round((deadline - Date.now()) / (60 * 60 * 1000)));
+  };
+
   if (loading) {
     return (
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '32px 24px' }}>
@@ -160,11 +214,22 @@ export default function PredictionDetail() {
         <div style={{ background: '#141C2B', border: '1px solid #243044', borderRadius: 16, padding: isMobile ? 18 : 32 }}>
           {/* Header */}
           <div style={{ marginBottom: 24 }}>
-            {prediction.shows && (
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', background: 'rgba(255,214,10,0.15)', color: '#FFD60A', padding: '4px 12px', borderRadius: 20 }}>
-                {prediction.shows.category} — {prediction.shows.title}
-              </span>
-            )}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              {prediction.shows && (
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', background: 'rgba(255,214,10,0.15)', color: '#FFD60A', padding: '4px 12px', borderRadius: 20 }}>
+                  {prediction.shows.category} — {prediction.shows.title}
+                </span>
+              )}
+              {(prediction.mode ?? 'official') === 'unofficial' ? (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: 'rgba(224,64,251,0.15)', color: '#E040FB', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <Users size={12} /> {t('predictions.unofficial')}
+                </span>
+              ) : (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: 'rgba(0,212,255,0.12)', color: '#00D4FF', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <Globe size={12} /> {t('predictions.official')}
+                </span>
+              )}
+            </div>
             <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 700, color: '#E2E8F0', marginTop: 12, lineHeight: 1.3 }}>{prediction.title}</h1>
             {prediction.description && <p style={{ color: '#64748B', marginTop: 8 }}>{prediction.description}</p>}
             {prediction.profiles && (
@@ -214,21 +279,27 @@ export default function PredictionDetail() {
             </div>
           )}
 
-          {/* Resolve Section (creator only) */}
-          {isActive && isAuthenticated && user?.id === prediction.creator_id && (
+          {/* Resolve Section */}
+          {isActive && isAuthenticated && (
+            (prediction.mode ?? 'official') === 'official'
+              ? user?.is_admin === true
+              : user?.id === prediction.creator_id
+          ) && (
             <div style={{
               padding: 20, borderRadius: 12, marginBottom: 16,
-              background: 'rgba(255,214,10,0.05)',
-              border: '1px solid rgba(255,214,10,0.2)',
+              background: (prediction.mode ?? 'official') === 'unofficial' ? 'rgba(224,64,251,0.05)' : 'rgba(255,214,10,0.05)',
+              border: `1px solid ${(prediction.mode ?? 'official') === 'unofficial' ? 'rgba(224,64,251,0.2)' : 'rgba(255,214,10,0.2)'}`,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <AlertTriangle size={18} color="#FFD60A" />
-                <span style={{ fontWeight: 700, fontSize: 15, color: '#FFD60A' }}>
+                {(prediction.mode ?? 'official') === 'official' ? <Shield size={18} color="#00D4FF" /> : <AlertTriangle size={18} color="#E040FB" />}
+                <span style={{ fontWeight: 700, fontSize: 15, color: (prediction.mode ?? 'official') === 'official' ? '#00D4FF' : '#E040FB' }}>
                   {t('predictions.resolve_title')}
                 </span>
               </div>
               <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>
-                {t('predictions.resolve_desc')}
+                {(prediction.mode ?? 'official') === 'official'
+                  ? t('predictions.resolve_desc_official')
+                  : t('predictions.resolve_desc_unofficial')}
               </p>
 
               {showResolveConfirm ? (
@@ -290,6 +361,98 @@ export default function PredictionDetail() {
                   </button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Waiting for admin banner (official predictions) */}
+          {isActive && (prediction.mode ?? 'official') === 'official' && !(user?.is_admin) && (
+            <div style={{
+              padding: 14, borderRadius: 12, marginBottom: 16,
+              background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.15)',
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <Shield size={16} color="#00D4FF" />
+              <span style={{ color: '#94A3B8', fontSize: 13 }}>{t('predictions.waiting_admin')}</span>
+            </div>
+          )}
+
+          {/* Dispute Section (unofficial, resolved, within 24h) */}
+          {(prediction.mode ?? 'official') === 'unofficial'
+            && (prediction.status === 'resolved_yes' || prediction.status === 'resolved_no')
+            && isAuthenticated
+            && userHasBet
+            && user?.id !== prediction.creator_id
+            && getDisputeHoursLeft() > 0
+            && !disputes.some(d => d.user_id === user?.id)
+            && (
+            <div style={{
+              padding: 20, borderRadius: 12, marginBottom: 16,
+              background: 'rgba(224,64,251,0.05)', border: '1px solid rgba(224,64,251,0.2)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <AlertTriangle size={18} color="#E040FB" />
+                <span style={{ fontWeight: 700, fontSize: 15, color: '#E040FB' }}>
+                  {t('predictions.dispute_title')}
+                </span>
+              </div>
+              <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 8, lineHeight: 1.5 }}>
+                {t('predictions.dispute_desc')}
+              </p>
+              <p style={{ color: '#64748B', fontSize: 12, marginBottom: 14 }}>
+                {t('predictions.dispute_window', { hours: getDisputeHoursLeft() })}
+              </p>
+              <div style={{ display: 'flex', gap: 12, flexDirection: isMobile ? 'column' as const : 'row' as const }}>
+                <button
+                  onClick={() => handleDispute('yes')}
+                  disabled={disputing}
+                  style={{
+                    flex: 1, padding: '12px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: '#2ED573', color: '#fff', fontWeight: 700, fontSize: 14,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    opacity: disputing ? 0.5 : 1,
+                  }}
+                >
+                  <ThumbsUp size={16} /> {t('predictions.dispute_vote_yes')}
+                </button>
+                <button
+                  onClick={() => handleDispute('no')}
+                  disabled={disputing}
+                  style={{
+                    flex: 1, padding: '12px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: '#FF4757', color: '#fff', fontWeight: 700, fontSize: 14,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    opacity: disputing ? 0.5 : 1,
+                  }}
+                >
+                  <ThumbsDown size={16} /> {t('predictions.dispute_vote_no')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Dispute status banner */}
+          {prediction.disputed && disputes.length > 0 && (
+            <div style={{
+              padding: 14, borderRadius: 12, marginBottom: 16,
+              background: 'rgba(224,64,251,0.05)', border: '1px solid rgba(224,64,251,0.15)',
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <AlertTriangle size={16} color="#E040FB" />
+              <div>
+                <div style={{ color: '#E040FB', fontWeight: 600, fontSize: 13 }}>
+                  {t('predictions.disputed_banner')}
+                </div>
+                <div style={{ color: '#64748B', fontSize: 12, marginTop: 2 }}>
+                  {t('predictions.dispute_votes', {
+                    yes: disputes.filter(d => d.vote === 'yes').length,
+                    no: disputes.filter(d => d.vote === 'no').length,
+                  })}
+                  {getDisputeHoursLeft() > 0
+                    ? ` · ${t('predictions.dispute_window', { hours: getDisputeHoursLeft() })}`
+                    : ` · ${t('predictions.dispute_window_closed')}`
+                  }
+                </div>
+              </div>
             </div>
           )}
 

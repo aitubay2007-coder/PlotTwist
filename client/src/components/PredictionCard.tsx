@@ -10,6 +10,7 @@ export interface PredictionCardPrediction {
   total_no: number;
   total_pool: number;
   deadline: string;
+  mode?: 'official' | 'unofficial';
   status: 'active' | 'resolved_yes' | 'resolved_no' | 'cancelled';
   shows?: { title: string; category?: string };
   profiles?: { username: string };
@@ -107,12 +108,23 @@ export default function PredictionCard({ prediction }: PredictionCardProps) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
-          <span style={{
-            ...badgeBase,
-            background: 'rgba(255,214,10,0.12)', color: '#FFD60A', textTransform: 'capitalize',
-          }}>
-            {t(`categories.${category}`, { defaultValue: category })}
-          </span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{
+              ...badgeBase,
+              background: 'rgba(255,214,10,0.12)', color: '#FFD60A', textTransform: 'capitalize',
+            }}>
+              {t(`categories.${category}`, { defaultValue: category })}
+            </span>
+            {prediction.mode === 'unofficial' ? (
+              <span style={{ ...badgeBase, background: 'rgba(224,64,251,0.15)', color: '#E040FB' }}>
+                {t('predictions.unofficial_badge')}
+              </span>
+            ) : (
+              <span style={{ ...badgeBase, background: 'rgba(0,212,255,0.12)', color: '#00D4FF' }}>
+                {t('predictions.official_badge')}
+              </span>
+            )}
+          </div>
           {getStatusBadge(status, deadline, t)}
         </div>
 

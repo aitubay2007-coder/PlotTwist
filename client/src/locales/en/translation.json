@@ -52,6 +52,9 @@
     "newest": "Newest",
     "all_shows": "All Shows",
     "search_placeholder": "Search predictions...",
+    "filter_all": "All",
+    "filter_official": "Official",
+    "filter_unofficial": "Friends",
     "potential_winnings": "Potential winnings",
     "days_left": "{{count}}d left",
     "hours_left": "{{count}}h left",
@@ -69,7 +72,27 @@
     "resolve_failed": "Failed to resolve prediction",
     "resolved_success": "Resolved! {{winners}} winners received {{paid}} coins total.",
     "resolved_title": "This prediction has been resolved",
-    "outcome": "Outcome"
+    "outcome": "Outcome",
+    "official": "Official",
+    "unofficial": "Between Friends",
+    "official_badge": "Official",
+    "unofficial_badge": "Friends",
+    "resolve_desc_official": "As an admin, you verify the real-world outcome. This is final.",
+    "resolve_desc_unofficial": "As the creator, you decide the outcome. Participants can dispute within 24 hours.",
+    "dispute_title": "Dispute Result",
+    "dispute_desc": "You have 24h to dispute this result. Vote for the outcome you believe is correct.",
+    "dispute_vote_yes": "Should be YES",
+    "dispute_vote_no": "Should be NO",
+    "dispute_submitted": "Your dispute vote has been recorded!",
+    "dispute_failed": "Failed to submit dispute",
+    "dispute_already_voted": "You already voted",
+    "dispute_window": "Dispute window: {{hours}}h remaining",
+    "dispute_window_closed": "Dispute window closed",
+    "disputed_banner": "This result was disputed",
+    "dispute_votes": "{{yes}} voted YES, {{no}} voted NO",
+    "dispute_status": "Disputed by {{count}} participants",
+    "admin_only": "Only admins can resolve official predictions",
+    "waiting_admin": "Waiting for admin to verify the result"
   },
   "create": {
     "title": "Create Prediction",
@@ -85,7 +108,12 @@
     "failed": "Failed to create prediction",
     "deadline_label": "Deadline",
     "submit": "Create Prediction",
-    "success": "Prediction created!"
+    "success": "Prediction created!",
+    "mode_label": "Prediction Type",
+    "mode_official": "Official",
+    "mode_unofficial": "Between Friends",
+    "mode_official_desc": "Verifiable facts — admins determine the result",
+    "mode_unofficial_desc": "Personal bets — creator resolves, participants can dispute"
   },
   "clans": {
     "title": "Your Clans",
@@ -292,6 +320,22 @@
     "placeholder": "Write a comment...",
     "login_required": "Log in to comment",
     "just_now": "Just now"
+  },
+  "bet_tooltip": {
+    "payout_explanation": "If your side wins, you'll receive a share of the total pool proportional to your bet. The more you bet vs others on your side, the higher your share."
+  },
+  "how_it_works": {
+    "title": "How PlotTwist Works",
+    "step1_title": "1. Start with 1,000 Coins",
+    "step1_desc": "Every new user gets 1,000 PlotCoins for free. Plus 50 coins daily bonus!",
+    "step2_title": "2. Create or Bet on Predictions",
+    "step2_desc": "Official predictions are verified by admins. Between-friends bets are settled by the creator.",
+    "step3_title": "3. Win Coins from the Pool",
+    "step3_desc": "When a prediction resolves, winners split the entire pool proportionally to their bets.",
+    "step4_title": "4. Climb the Leaderboard",
+    "step4_desc": "Earn reputation, join clans, and prove you're the ultimate prediction expert!",
+    "got_it": "Got It!",
+    "dismiss": "Don't show again"
   },
   "chat": {
     "title": "Clan Chat",

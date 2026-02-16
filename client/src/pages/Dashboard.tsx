@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<Sort>('trending');
   const [search, setSearch] = useState('');
+  const [modeFilter, setModeFilter] = useState<'all' | 'official' | 'unofficial'>('all');
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
 
@@ -48,9 +49,11 @@ export default function Dashboard() {
     })();
   }, [sort]);
 
-  const filtered = predictions.filter(p =>
-    (p.title ?? '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = predictions.filter(p => {
+    const matchSearch = (p.title ?? '').toLowerCase().includes(search.toLowerCase());
+    const matchMode = modeFilter === 'all' || (p.mode ?? 'official') === modeFilter;
+    return matchSearch && matchMode;
+  });
   const featured = filtered.slice(0, 2);
   const rest = filtered.slice(2);
 
@@ -115,6 +118,9 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+
+      {/* =========== HOW IT WORKS =========== */}
+      <HowItWorksCard />
 
       {/* =========== MAIN CONTENT =========== */}
       <div style={{
@@ -214,6 +220,29 @@ export default function Dashboard() {
                 {s === 'trending' ? t('predictions.trending') : s === 'newest' ? t('predictions.newest') : t('predictions.ending_soon')}
               </button>
             ))}
+
+            {/* Mode filter pills */}
+            <div style={{ width: 1, height: 20, background: '#243044', flexShrink: 0 }} />
+            {(['all', 'official', 'unofficial'] as const).map(m => (
+              <button key={m} onClick={() => setModeFilter(m)} style={{
+                padding: isMobile ? '7px 12px' : '8px 16px',
+                borderRadius: 20,
+                border: modeFilter === m ? 'none' : '1px solid #243044',
+                cursor: 'pointer',
+                fontSize: isMobile ? 12 : 13,
+                fontWeight: 700,
+                transition: 'all 0.2s',
+                background: modeFilter === m
+                  ? (m === 'unofficial' ? '#E040FB' : m === 'official' ? '#00D4FF' : '#FFD60A')
+                  : '#141C2B',
+                color: modeFilter === m ? '#0B1120' : '#94A3B8',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}>
+                {t(`predictions.filter_${m}`)}
+              </button>
+            ))}
+
             {!isMobile && (
               <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
                 <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
@@ -329,17 +358,28 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
       }}>
         <div>
-          {prediction.shows && (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+            {prediction.shows && (
+              <span style={{
+                display: 'inline-block',
+                fontSize: isMobile ? 9 : 10, fontWeight: 800, textTransform: 'uppercase',
+                background: '#FFD60A', color: '#1a1a00',
+                padding: '3px 10px', borderRadius: 4,
+                letterSpacing: 1,
+              }}>
+                {prediction.shows?.category}
+              </span>
+            )}
             <span style={{
               display: 'inline-block',
-              fontSize: isMobile ? 9 : 10, fontWeight: 800, textTransform: 'uppercase',
-              background: '#FFD60A', color: '#1a1a00',
-              padding: '3px 10px', borderRadius: 4, marginBottom: 8,
-              letterSpacing: 1,
+              fontSize: isMobile ? 9 : 10, fontWeight: 700,
+              padding: '3px 10px', borderRadius: 4,
+              background: (prediction.mode ?? 'official') === 'unofficial' ? 'rgba(224,64,251,0.2)' : 'rgba(0,212,255,0.15)',
+              color: (prediction.mode ?? 'official') === 'unofficial' ? '#E040FB' : '#0891b2',
             }}>
-              {prediction.shows?.category}
+              {(prediction.mode ?? 'official') === 'unofficial' ? t('predictions.unofficial_badge') : t('predictions.official_badge')}
             </span>
-          )}
+          </div>
           <h3 style={{
             fontSize: isMobile ? 15 : 16, fontWeight: 700,
             color: '#1a1a1a', lineHeight: 1.35,
@@ -480,6 +520,67 @@ function Skeleton({ h }: { h: number }) {
   );
 }
 
+function HowItWorksCard() {
+  const { t } = useTranslation();
+  const isMobile = useIsMobile();
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem('pt_hiw_dismissed') === '1');
+
+  if (dismissed) return null;
+
+  const steps = [
+    { title: t('how_it_works.step1_title'), desc: t('how_it_works.step1_desc'), icon: '🪙' },
+    { title: t('how_it_works.step2_title'), desc: t('how_it_works.step2_desc'), icon: '🎯' },
+    { title: t('how_it_works.step3_title'), desc: t('how_it_works.step3_desc'), icon: '🏆' },
+    { title: t('how_it_works.step4_title'), desc: t('how_it_works.step4_desc'), icon: '📈' },
+  ];
+
+  return (
+    <div style={{
+      maxWidth: 1120, margin: '0 auto',
+      padding: isMobile ? '16px 16px 0' : '24px 24px 0',
+    }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        style={{
+          background: 'linear-gradient(135deg, #1C2538 0%, #141C2B 100%)',
+          border: '1px solid rgba(255,214,10,0.2)',
+          borderRadius: 16, padding: isMobile ? 18 : 24,
+        }}
+      >
+        <h3 style={{
+          fontFamily: "'Bangers', cursive", fontSize: isMobile ? 20 : 26,
+          color: '#FFD60A', margin: '0 0 16px', textAlign: 'center',
+        }}>
+          {t('how_it_works.title')}
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 12 }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{
+              background: '#0B1120', borderRadius: 12, padding: isMobile ? 14 : 16,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>{s.icon}</div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#E2E8F0', marginBottom: 4 }}>{s.title}</div>
+              <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.4 }}>{s.desc}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 14 }}>
+          <button
+            onClick={() => { setDismissed(true); localStorage.setItem('pt_hiw_dismissed', '1'); }}
+            style={{
+              padding: '8px 24px', borderRadius: 8, border: 'none', cursor: 'pointer',
+              background: '#FFD60A', color: '#0B1120', fontWeight: 700, fontSize: 13,
+            }}
+          >
+            {t('how_it_works.got_it')}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 function timeLeft(d: string) {
   const t = new Date(d).getTime();
   if (isNaN(t)) return '—';
@@ -495,10 +596,10 @@ const d = (days: number) => new Date(Date.now() + days * 86400000).toISOString()
 const now = new Date().toISOString();
 
 const DEMO: Prediction[] = [
-  { id:'1', title:'Luffy will find the One Piece by end of 2026', description:null, show_id:'1', creator_id:'1', status:'active', deadline:d(30), total_yes:15000, total_no:8000, total_pool:23000, created_at:now, shows:{title:'One Piece',poster_url:null,category:'anime'}, profiles:{username:'NakamaCrew',avatar_url:null} },
-  { id:'2', title:'Squid Game S3 protagonist dies in the finale', description:null, show_id:'2', creator_id:'2', status:'active', deadline:d(14), total_yes:12000, total_no:18000, total_pool:30000, created_at:now, shows:{title:'Squid Game',poster_url:null,category:'series'}, profiles:{username:'KDramaKing',avatar_url:null} },
-  { id:'3', title:'Vegapunk will survive the Egghead arc', description:null, show_id:'1', creator_id:'3', status:'active', deadline:d(7), total_yes:5000, total_no:20000, total_pool:25000, created_at:now, shows:{title:'One Piece',poster_url:null,category:'anime'}, profiles:{username:'GrandLineGuru',avatar_url:null} },
-  { id:'4', title:'Kanye West will release Bully this year', description:null, show_id:'4', creator_id:'4', status:'active', deadline:d(60), total_yes:3000, total_no:22000, total_pool:25000, created_at:now, shows:{title:'Music',poster_url:null,category:'music'}, profiles:{username:'YeezyFan',avatar_url:null} },
-  { id:'5', title:'Jon Snow spin-off announced at Comic-Con', description:null, show_id:'5', creator_id:'5', status:'active', deadline:d(120), total_yes:9000, total_no:6000, total_pool:15000, created_at:now, shows:{title:'Game of Thrones',poster_url:null,category:'series'}, profiles:{username:'WinterIsComing',avatar_url:null} },
-  { id:'6', title:'Islam Makhachev defends title at UFC 310', description:null, show_id:'6', creator_id:'6', status:'active', deadline:d(45), total_yes:25000, total_no:10000, total_pool:35000, created_at:now, shows:{title:'UFC',poster_url:null,category:'sport'}, profiles:{username:'MMAExpert',avatar_url:null} },
+  { id:'1', title:'Luffy will find the One Piece by end of 2026', description:null, show_id:'1', creator_id:'1', mode:'official', status:'active', deadline:d(30), resolved_at:null, disputed:false, total_yes:15000, total_no:8000, total_pool:23000, created_at:now, shows:{title:'One Piece',poster_url:null,category:'anime'}, profiles:{username:'NakamaCrew',avatar_url:null} },
+  { id:'2', title:'Squid Game S3 protagonist dies in the finale', description:null, show_id:'2', creator_id:'2', mode:'official', status:'active', deadline:d(14), resolved_at:null, disputed:false, total_yes:12000, total_no:18000, total_pool:30000, created_at:now, shows:{title:'Squid Game',poster_url:null,category:'series'}, profiles:{username:'KDramaKing',avatar_url:null} },
+  { id:'3', title:'Vegapunk will survive the Egghead arc', description:null, show_id:'1', creator_id:'3', mode:'unofficial', status:'active', deadline:d(7), resolved_at:null, disputed:false, total_yes:5000, total_no:20000, total_pool:25000, created_at:now, shows:{title:'One Piece',poster_url:null,category:'anime'}, profiles:{username:'GrandLineGuru',avatar_url:null} },
+  { id:'4', title:'Kanye West will release Bully this year', description:null, show_id:'4', creator_id:'4', mode:'official', status:'active', deadline:d(60), resolved_at:null, disputed:false, total_yes:3000, total_no:22000, total_pool:25000, created_at:now, shows:{title:'Music',poster_url:null,category:'music'}, profiles:{username:'YeezyFan',avatar_url:null} },
+  { id:'5', title:'Jon Snow spin-off announced at Comic-Con', description:null, show_id:'5', creator_id:'5', mode:'unofficial', status:'active', deadline:d(120), resolved_at:null, disputed:false, total_yes:9000, total_no:6000, total_pool:15000, created_at:now, shows:{title:'Game of Thrones',poster_url:null,category:'series'}, profiles:{username:'WinterIsComing',avatar_url:null} },
+  { id:'6', title:'Islam Makhachev defends title at UFC 310', description:null, show_id:'6', creator_id:'6', mode:'official', status:'active', deadline:d(45), resolved_at:null, disputed:false, total_yes:25000, total_no:10000, total_pool:35000, created_at:now, shows:{title:'UFC',poster_url:null,category:'sport'}, profiles:{username:'MMAExpert',avatar_url:null} },
 ];

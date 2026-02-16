@@ -7,6 +7,7 @@ export interface Profile {
   reputation: number;
   country: string | null;
   last_daily_bonus: string | null;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -25,8 +26,11 @@ export interface Prediction {
   description: string | null;
   show_id: string;
   creator_id: string;
+  mode: 'official' | 'unofficial';
   status: 'active' | 'resolved_yes' | 'resolved_no' | 'cancelled';
   deadline: string;
+  resolved_at: string | null;
+  disputed: boolean;
   total_yes: number;
   total_no: number;
   total_pool: number;
@@ -34,6 +38,15 @@ export interface Prediction {
   shows?: Pick<Show, 'title' | 'poster_url' | 'category'>;
   profiles?: Pick<Profile, 'username' | 'avatar_url'>;
   bets?: Bet[];
+}
+
+export interface PredictionDispute {
+  id: string;
+  prediction_id: string;
+  user_id: string;
+  vote: 'yes' | 'no';
+  reason: string | null;
+  created_at: string;
 }
 
 export interface Bet {

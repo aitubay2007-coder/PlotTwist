@@ -10,6 +10,7 @@ interface Profile {
   reputation: number;
   country: string | null;
   last_daily_bonus: string | null;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -158,7 +159,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw new AuthError('err_register_failed', insertErr.message);
     }
     set({
-      user: (inserted as Profile) || { id: userId, username, display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: new Date().toISOString(), last_daily_bonus: null },
+      user: (inserted as Profile) || { id: userId, username, display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: new Date().toISOString(), last_daily_bonus: null, is_admin: false },
       isAuthenticated: true,
     });
   },
@@ -178,7 +179,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ user: profile as Profile, isAuthenticated: true });
       } else {
         set({
-          user: { id: au.id, username: au.user_metadata?.username || 'user', display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: au.created_at, last_daily_bonus: null },
+          user: { id: au.id, username: au.user_metadata?.username || 'user', display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: au.created_at, last_daily_bonus: null, is_admin: false },
           isAuthenticated: true,
         });
       }
