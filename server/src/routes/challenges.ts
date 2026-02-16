@@ -138,8 +138,8 @@ challengeRoutes.post('/:id/decline', requireAuth, async (req: AuthRequest, res: 
     if (challenge.challenged_id !== req.userId) return res.status(403).json({ error: 'Not your challenge' });
     if (challenge.status !== 'pending') return res.status(400).json({ error: 'Challenge already responded' });
 
-    // Refund challenger
-    await supabaseAdmin.rpc('increment_coins', {
+    // Refund challenger (admin_increment_coins allows server to modify other users' coins)
+    await supabaseAdmin.rpc('admin_increment_coins', {
       user_id_param: challenge.challenger_id,
       amount_param: challenge.amount,
     });

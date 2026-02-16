@@ -28,6 +28,7 @@ export default function Challenges() {
   const [challenges, setChallenges] = useState<ChallengeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'incoming' | 'outgoing'>('incoming');
+  const [actionId, setActionId] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function Challenges() {
   };
 
   const handleAccept = async (id: string) => {
+    setActionId(id);
     try {
       const { data, error } = await supabase.rpc('accept_challenge', {
         challenge_id_param: id,
@@ -68,21 +70,44 @@ export default function Challenges() {
       fetchChallenges();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('challenges.failed'));
+    } finally {
+      setActionId(null);
     }
   };
 
   const handleDecline = async (id: string) => {
+    setActionId(id);
     try {
+      // Find the challenge to get the amount and challenger_id for refund
+      const challenge = challenges.find(c => c.id === id);
+
       const { error } = await supabase
         .from('challenges')
         .update({ status: 'declined' })
         .eq('id', id);
 
       if (error) throw error;
+
+      // Refund the challenger's escrowed coins
+      if (challenge) {
+        await supabase.rpc('increment_coins', {
+          user_id_param: challenge.challenger_id,
+          amount_param: challenge.amount,
+        });
+        await supabase.from('transactions').insert({
+          user_id: challenge.challenger_id,
+          type: 'challenge_refund',
+          amount: challenge.amount,
+          description: 'Challenge declined — refund',
+        });
+      }
+
       toast.success(t('challenges.declined_success'));
       fetchChallenges();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('challenges.failed'));
+    } finally {
+      setActionId(null);
     }
   };
 
@@ -200,18 +225,22 @@ export default function Challenges() {
                   <div style={{ display: 'flex', gap: 8, marginLeft: isMobile ? 0 : 16, alignSelf: isMobile ? 'flex-end' as const : undefined }}>
                     <button
                       onClick={() => handleAccept(challenge.id)}
+                      disabled={actionId === challenge.id}
                       style={{
-                        padding: 12, borderRadius: 10, border: 'none', cursor: 'pointer',
+                        padding: 12, borderRadius: 10, border: 'none', cursor: actionId === challenge.id ? 'not-allowed' : 'pointer',
                         background: 'rgba(46,213,115,0.15)', color: '#2ED573',
+                        opacity: actionId === challenge.id ? 0.5 : 1,
                       }}
                     >
                       <Check size={20} />
                     </button>
                     <button
                       onClick={() => handleDecline(challenge.id)}
+                      disabled={actionId === challenge.id}
                       style={{
-                        padding: 12, borderRadius: 10, border: 'none', cursor: 'pointer',
+                        padding: 12, borderRadius: 10, border: 'none', cursor: actionId === challenge.id ? 'not-allowed' : 'pointer',
                         background: 'rgba(255,71,87,0.15)', color: '#FF4757',
+                        opacity: actionId === challenge.id ? 0.5 : 1,
                       }}
                     >
                       <X size={20} />

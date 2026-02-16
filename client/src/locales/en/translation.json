@@ -251,6 +251,7 @@
     "coins": "PlotCoins",
     "coins_short": "TC",
     "close": "Close",
+    "confirm": "Confirm",
     "by": "by"
   },
   "footer": {

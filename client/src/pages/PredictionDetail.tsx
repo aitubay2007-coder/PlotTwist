@@ -85,7 +85,7 @@ export default function PredictionDetail() {
       fetchPrediction();
       fetchProfile();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to place bet');
+      toast.error(err instanceof Error ? err.message : t('common.error'));
     }
   };
 
@@ -251,7 +251,7 @@ export default function PredictionDetail() {
                         opacity: resolving ? 0.5 : 1,
                       }}
                     >
-                      {resolving ? t('common.loading') : t('predictions.resolve_yes_confirm')}
+                      {resolving ? t('common.loading') : t('predictions.confirm')}
                     </button>
                     <button
                       onClick={() => setShowResolveConfirm(null)}

@@ -7,7 +7,7 @@ const LEVEL_ICONS = [Shield, Star, Star, Crown, Gem];
 /* ---- Badge (icon + title) ---- */
 export function ClanBadge({ level, size = 'md' }: { level: number; size?: 'sm' | 'md' | 'lg' }) {
   const info = getClanLevel(level);
-  const Icon = LEVEL_ICONS[Math.min(level - 1, 4)];
+  const Icon = LEVEL_ICONS[Math.max(0, Math.min(level - 1, 4))] ?? Shield;
   const s = size === 'sm' ? 14 : size === 'lg' ? 24 : 18;
   const fs = size === 'sm' ? 10 : size === 'lg' ? 14 : 12;
   const px = size === 'sm' ? 6 : size === 'lg' ? 14 : 10;
@@ -78,7 +78,7 @@ export function ClanXPBar({ xp, level, showLabel = true }: { xp: number; level: 
 /* ---- Level Shield (large decorative) ---- */
 export function ClanLevelShield({ level, size = 64 }: { level: number; size?: number }) {
   const info = getClanLevel(level);
-  const Icon = LEVEL_ICONS[Math.min(level - 1, 4)];
+  const Icon = LEVEL_ICONS[Math.max(0, Math.min(level - 1, 4))] ?? Shield;
 
   return (
     <div style={{

@@ -138,9 +138,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     // 4. Manual fallback
-    await supabase.from('profiles').insert({ id: userId, username, coins: 1000 }).select().single();
+    const { data: inserted, error: insertErr } = await supabase
+      .from('profiles')
+      .insert({ id: userId, username, coins: 1000 })
+      .select()
+      .single();
+    if (insertErr) {
+      console.error('[PT] Manual profile insert failed:', insertErr);
+      throw new AuthError('err_register_failed', insertErr.message);
+    }
     set({
-      user: { id: userId, username, display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: new Date().toISOString() },
+      user: inserted as Profile || { id: userId, username, display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: new Date().toISOString() },
       isAuthenticated: true,
     });
   },
