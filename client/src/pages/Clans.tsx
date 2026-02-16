@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Link as LinkIcon, X, Search, Trophy, Crown, Zap, TrendingUp } from 'lucide-react';
+import { Plus, Users, Link as LinkIcon, X, Search, Trophy, Crown, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
