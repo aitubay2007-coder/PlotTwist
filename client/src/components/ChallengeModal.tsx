@@ -49,16 +49,18 @@ export default function ChallengeModal({
 
   // User search suggestions
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const maxAmount = user?.coins ?? 0;
 
+  const query = opponentUsername.replace(/^@/, '').trim();
+  const dropdownVisible = inputFocused && query.length >= 1;
+
   // Search users when typing
   useEffect(() => {
-    const query = opponentUsername.replace(/^@/, '').trim();
     if (query.length < 1) {
       setSuggestions([]);
       return;
@@ -84,21 +86,11 @@ export default function ChallengeModal({
     }, 300);
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [opponentUsername, user?.id]);
+  }, [query, user?.id]);
 
-  // Close suggestions on outside click/touch
+  // Cleanup blur timeout on unmount
   useEffect(() => {
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler);
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('touchstart', handler);
-    };
+    return () => { if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current); };
   }, []);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -111,14 +103,25 @@ export default function ChallengeModal({
     setPosition('yes');
     setAmount(MIN_AMOUNT);
     setSuggestions([]);
-    setShowSuggestions(false);
+    setInputFocused(false);
     onClose();
   };
 
   const handleSelectUser = (username: string) => {
     setOpponentUsername(username);
-    setShowSuggestions(false);
+    setInputFocused(false);
     setSuggestions([]);
+  };
+
+  const handleInputFocus = () => {
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    setInputFocused(true);
+  };
+
+  const handleInputBlur = () => {
+    blurTimeoutRef.current = setTimeout(() => {
+      setInputFocused(false);
+    }, 250);
   };
 
   const handleSend = async () => {
@@ -179,6 +182,7 @@ export default function ChallengeModal({
               background: '#141C2B', border: '1px solid rgba(255,214,10,0.2)',
               borderRadius: 16, padding: 24, width: '100%', maxWidth: 420,
               boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+              overflow: 'visible',
             }}
           >
             {/* Header */}
@@ -198,39 +202,41 @@ export default function ChallengeModal({
             </div>
 
             {/* Opponent with autocomplete */}
-            <div style={{ marginBottom: 16, position: 'relative' }} ref={suggestionsRef}>
+            <div style={{ marginBottom: 16, position: 'relative', zIndex: 10 }}>
               <label style={labelStyle}>{t('challenges.select_user')}</label>
               <div style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+                <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#475569', pointerEvents: 'none' }} />
                 <input
                   type="text"
                   value={opponentUsername}
-                  onChange={(e) => { setOpponentUsername(e.target.value); setShowSuggestions(true); }}
-                  onFocus={() => setShowSuggestions(true)}
+                  onChange={(e) => setOpponentUsername(e.target.value)}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                   placeholder="@username"
                   autoComplete="off"
                   autoCapitalize="off"
                   autoCorrect="off"
                   spellCheck={false}
+                  enterKeyHint="search"
                   style={{ ...inputStyle, paddingLeft: 36 }}
                 />
               </div>
 
               {/* Suggestions dropdown */}
-              {showSuggestions && opponentUsername.replace(/^@/, '').trim().length >= 1 && (
+              {dropdownVisible && (
                 <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 60,
-                  background: '#1C2538', border: '1px solid #243044', borderRadius: 10,
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                  background: '#1C2538', border: '1px solid #FFD60A40', borderRadius: 10,
                   marginTop: 4, maxHeight: 220, overflowY: 'auto',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
                 }}>
                   {searchLoading && (
-                    <div style={{ padding: '12px 14px', color: '#64748B', fontSize: 13, textAlign: 'center' }}>
+                    <div style={{ padding: '14px', color: '#94A3B8', fontSize: 13, textAlign: 'center' }}>
                       {t('common.loading')}
                     </div>
                   )}
                   {!searchLoading && suggestions.length === 0 && (
-                    <div style={{ padding: '12px 14px', color: '#64748B', fontSize: 13, textAlign: 'center' }}>
+                    <div style={{ padding: '14px', color: '#64748B', fontSize: 13, textAlign: 'center' }}>
                       {t('challenges.user_not_found')}
                     </div>
                   )}
@@ -238,12 +244,14 @@ export default function ChallengeModal({
                     <button
                       key={s.id}
                       type="button"
-                      onPointerDown={(e) => { e.preventDefault(); handleSelectUser(s.username); }}
+                      onMouseDown={(e) => { e.preventDefault(); handleSelectUser(s.username); }}
+                      onTouchStart={(e) => { e.preventDefault(); handleSelectUser(s.username); }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                         padding: '10px 14px', background: 'transparent', border: 'none',
                         borderBottom: '1px solid #243044', cursor: 'pointer',
                         textAlign: 'left', transition: 'background 0.15s',
+                        WebkitTapHighlightColor: 'rgba(255,214,10,0.1)',
                       }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#243044')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
