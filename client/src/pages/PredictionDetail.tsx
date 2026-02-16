@@ -187,10 +187,10 @@ export default function PredictionDetail() {
 
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
-            <StatBox label={t('predictions.pool')} value={prediction.total_pool.toLocaleString()} color="#FFD60A" />
-            <StatBox label={t('predictions.vote_yes')} value={prediction.total_yes.toLocaleString()} color="#2ED573" />
-            <StatBox label={t('predictions.vote_no')} value={prediction.total_no.toLocaleString()} color="#FF4757" />
-            <StatBox label={t('predictions.deadline')} value={deadline.toLocaleDateString()} color="#E2E8F0" />
+            <StatBox label={t('predictions.pool')} value={(prediction.total_pool ?? 0).toLocaleString()} color="#FFD60A" />
+            <StatBox label={t('predictions.vote_yes')} value={(prediction.total_yes ?? 0).toLocaleString()} color="#2ED573" />
+            <StatBox label={t('predictions.vote_no')} value={(prediction.total_no ?? 0).toLocaleString()} color="#FF4757" />
+            <StatBox label={t('predictions.deadline')} value={deadline?.toLocaleDateString() ?? '—'} color="#E2E8F0" />
           </div>
 
           {/* Resolved Banner */}

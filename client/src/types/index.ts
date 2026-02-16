@@ -6,6 +6,7 @@ export interface Profile {
   coins: number;
   reputation: number;
   country: string | null;
+  last_daily_bonus: string | null;
   created_at: string;
 }
 

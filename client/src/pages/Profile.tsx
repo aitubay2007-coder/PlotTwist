@@ -125,8 +125,8 @@ export default function Profile() {
   const winRate = resolvedBets > 0 ? Math.round((wonBets / resolvedBets) * 100) : 0;
 
   const stats = [
-    { icon: <Coins size={32} color="#FFD60A" />, value: user.coins.toLocaleString(), label: t('profile.coins'), color: '#FFD60A' },
-    { icon: <Star size={32} color="#FFD60A" />, value: user.reputation.toLocaleString(), label: t('profile.reputation'), color: '#E2E8F0' },
+    { icon: <Coins size={32} color="#FFD60A" />, value: (user.coins ?? 0).toLocaleString(), label: t('profile.coins'), color: '#FFD60A' },
+    { icon: <Star size={32} color="#FFD60A" />, value: (user.reputation ?? 0).toLocaleString(), label: t('profile.reputation'), color: '#E2E8F0' },
     { icon: <Target size={32} color="#FFD60A" />, value: predictionCount.toString(), label: t('profile.predictions_made'), color: '#E2E8F0' },
     { icon: <BarChart3 size={32} color="#FFD60A" />, value: resolvedBets > 0 ? `${winRate}%` : '—', label: t('profile.win_rate'), color: '#E2E8F0' },
   ];

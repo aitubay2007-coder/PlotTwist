@@ -313,7 +313,8 @@ function SideBtn({ to, icon, label, primary }: { to: string; icon: React.ReactNo
 
 function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobile: boolean }) {
   const { t } = useTranslation();
-  const pct = prediction.total_pool > 0 ? Math.round((prediction.total_yes / prediction.total_pool) * 100) : 50;
+  const pool = prediction.total_pool ?? 0;
+  const pct = pool > 0 ? Math.round(((prediction.total_yes ?? 0) / pool) * 100) : 50;
 
   return (
     <Link to={`/prediction/${prediction.id}`} style={{ textDecoration: 'none' }}>
@@ -366,7 +367,7 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
             fontSize: isMobile ? 10 : 11, marginBottom: 12,
           }}>
             <span style={{ color: '#b8860b', fontWeight: 800 }}>
-              {prediction.total_pool.toLocaleString()} {t('common.coins_short')}
+              {(prediction.total_pool ?? 0).toLocaleString()} {t('common.coins_short')}
             </span>
             <span style={{ color: '#999' }}>{timeLeft(prediction.deadline)}</span>
           </div>
@@ -395,7 +396,8 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
 
 function PredCard({ prediction, isMobile }: { prediction: Prediction; isMobile: boolean }) {
   const { t } = useTranslation();
-  const pct = prediction.total_pool > 0 ? Math.round((prediction.total_yes / prediction.total_pool) * 100) : 50;
+  const pool = prediction.total_pool ?? 0;
+  const pct = pool > 0 ? Math.round(((prediction.total_yes ?? 0) / pool) * 100) : 50;
 
   return (
     <Link to={`/prediction/${prediction.id}`} style={{ textDecoration: 'none' }}>
@@ -458,7 +460,7 @@ function PredCard({ prediction, isMobile }: { prediction: Prediction; isMobile: 
           fontSize: 11, marginTop: 'auto',
         }}>
           <span style={{ color: '#FFD60A', fontWeight: 700 }}>
-            {prediction.total_pool.toLocaleString()} {t('common.coins_short')}
+            {(prediction.total_pool ?? 0).toLocaleString()} {t('common.coins_short')}
           </span>
           <span style={{ color: '#64748B' }}>{timeLeft(prediction.deadline)}</span>
         </div>
