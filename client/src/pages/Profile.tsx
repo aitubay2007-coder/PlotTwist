@@ -304,7 +304,7 @@ export default function Profile() {
                           {b.predictions?.title || '—'}
                         </span>
                         <span style={{ fontSize: 12, color: '#64748B' }}>
-                          {b.position.toUpperCase()} · {b.amount.toLocaleString()} {t('common.coins_short')}
+                          {(b.position ?? '—').toUpperCase()} · {(b.amount ?? 0).toLocaleString()} {t('common.coins_short')}
                         </span>
                       </div>
                       {won && <Trophy size={18} color="#2ED573" />}
