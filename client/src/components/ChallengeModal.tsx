@@ -212,6 +212,11 @@ export default function ChallengeModal({
                 />
               </div>
 
+              {/* DEBUG: remove after testing */}
+              <div style={{ padding: '4px 8px', marginTop: 4, background: '#FF4757', color: '#fff', fontSize: 11, borderRadius: 6 }}>
+                DEBUG: query="{query}" | len={query.length} | dismissed={String(dismissed)} | visible={String(dropdownVisible)} | loading={String(searchLoading)} | results={suggestions.length} | user={user?.id ? 'yes' : 'no'}
+              </div>
+
               {/* Suggestions dropdown — always rendered inline when visible */}
               {dropdownVisible && (
                 <div style={{
