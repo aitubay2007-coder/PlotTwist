@@ -47,38 +47,45 @@ export default function ChallengeModal({
   const [amount, setAmount] = useState(MIN_AMOUNT);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // User search suggestions
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
-  const [inputFocused, setInputFocused] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const maxAmount = user?.coins ?? 0;
-
   const query = opponentUsername.replace(/^@/, '').trim();
-  const dropdownVisible = inputFocused && query.length >= 1;
+
+  // Dropdown is visible: has text, not dismissed after selection
+  const dropdownVisible = query.length >= 1 && !dismissed;
+
+  // Reset dismissed flag whenever user types
+  useEffect(() => {
+    setDismissed(false);
+  }, [opponentUsername]);
 
   // Search users when typing
   useEffect(() => {
     if (query.length < 1) {
       setSuggestions([]);
+      setSearchLoading(false);
       return;
     }
 
+    setSearchLoading(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
-      setSearchLoading(true);
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('id, username, avatar_url, reputation')
           .ilike('username', `%${query}%`)
           .neq('id', user?.id ?? '')
           .order('reputation', { ascending: false })
           .limit(6);
+        if (error) throw error;
         setSuggestions((data as UserSuggestion[]) || []);
-      } catch {
+      } catch (err) {
+        console.error('Search error:', err);
         setSuggestions([]);
       } finally {
         setSearchLoading(false);
@@ -87,11 +94,6 @@ export default function ChallengeModal({
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query, user?.id]);
-
-  // Cleanup blur timeout on unmount
-  useEffect(() => {
-    return () => { if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current); };
-  }, []);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
@@ -103,25 +105,14 @@ export default function ChallengeModal({
     setPosition('yes');
     setAmount(MIN_AMOUNT);
     setSuggestions([]);
-    setInputFocused(false);
+    setDismissed(false);
     onClose();
   };
 
   const handleSelectUser = (username: string) => {
+    setDismissed(true);
     setOpponentUsername(username);
-    setInputFocused(false);
     setSuggestions([]);
-  };
-
-  const handleInputFocus = () => {
-    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
-    setInputFocused(true);
-  };
-
-  const handleInputBlur = () => {
-    blurTimeoutRef.current = setTimeout(() => {
-      setInputFocused(false);
-    }, 250);
   };
 
   const handleSend = async () => {
@@ -150,6 +141,7 @@ export default function ChallengeModal({
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 16px', borderRadius: 10, fontSize: 16,
     background: '#0B1120', border: '1px solid #243044', color: '#E2E8F0', outline: 'none',
+    boxSizing: 'border-box',
   };
 
   const labelStyle: React.CSSProperties = {
@@ -182,7 +174,7 @@ export default function ChallengeModal({
               background: '#141C2B', border: '1px solid rgba(255,214,10,0.2)',
               borderRadius: 16, padding: 24, width: '100%', maxWidth: 420,
               boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-              overflow: 'visible',
+              overflow: 'visible', position: 'relative',
             }}
           >
             {/* Header */}
@@ -202,7 +194,7 @@ export default function ChallengeModal({
             </div>
 
             {/* Opponent with autocomplete */}
-            <div style={{ marginBottom: 16, position: 'relative', zIndex: 10 }}>
+            <div style={{ marginBottom: 16, position: 'relative', zIndex: 20 }}>
               <label style={labelStyle}>{t('challenges.select_user')}</label>
               <div style={{ position: 'relative' }}>
                 <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#475569', pointerEvents: 'none' }} />
@@ -210,8 +202,6 @@ export default function ChallengeModal({
                   type="text"
                   value={opponentUsername}
                   onChange={(e) => setOpponentUsername(e.target.value)}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
                   placeholder="@username"
                   autoComplete="off"
                   autoCapitalize="off"
@@ -222,17 +212,16 @@ export default function ChallengeModal({
                 />
               </div>
 
-              {/* Suggestions dropdown */}
+              {/* Suggestions dropdown — always rendered inline when visible */}
               {dropdownVisible && (
                 <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                  background: '#1C2538', border: '1px solid #FFD60A40', borderRadius: 10,
-                  marginTop: 4, maxHeight: 220, overflowY: 'auto',
-                  boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
+                  background: '#1E293B', border: '2px solid #FFD60A', borderRadius: 10,
+                  marginTop: 6, maxHeight: 200, overflowY: 'auto',
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.7)',
                 }}>
                   {searchLoading && (
                     <div style={{ padding: '14px', color: '#94A3B8', fontSize: 13, textAlign: 'center' }}>
-                      {t('common.loading')}
+                      ⏳ {t('common.loading')}
                     </div>
                   )}
                   {!searchLoading && suggestions.length === 0 && (
@@ -241,22 +230,18 @@ export default function ChallengeModal({
                     </div>
                   )}
                   {!searchLoading && suggestions.map(s => (
-                    <button
+                    <div
                       key={s.id}
-                      type="button"
-                      onMouseDown={(e) => { e.preventDefault(); handleSelectUser(s.username); }}
-                      onTouchStart={(e) => { e.preventDefault(); handleSelectUser(s.username); }}
+                      onClick={() => handleSelectUser(s.username)}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '10px 14px', background: 'transparent', border: 'none',
-                        borderBottom: '1px solid #243044', cursor: 'pointer',
-                        textAlign: 'left', transition: 'background 0.15s',
-                        WebkitTapHighlightColor: 'rgba(255,214,10,0.1)',
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 14px',
+                        background: 'transparent',
+                        borderBottom: '1px solid #334155',
+                        cursor: 'pointer',
+                        WebkitTapHighlightColor: 'rgba(255,214,10,0.2)',
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#243044')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      {/* Avatar */}
                       <div style={{
                         width: 32, height: 32, borderRadius: '50%',
                         background: 'rgba(255,214,10,0.15)', color: '#FFD60A',
@@ -273,7 +258,7 @@ export default function ChallengeModal({
                           ⭐ {(s.reputation ?? 0).toLocaleString()}
                         </div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
