@@ -245,7 +245,7 @@ export default function Clans() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 24 }}
         >
-          {clans.map((clan, i) => (
+          {clans.filter(clan => clan.clans).map((clan, i) => (
             <motion.div
               key={clan.clans.id}
               initial={{ opacity: 0, y: 20 }}

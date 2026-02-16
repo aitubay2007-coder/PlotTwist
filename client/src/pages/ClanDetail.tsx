@@ -77,7 +77,7 @@ export default function ClanDetail() {
     }
   };
 
-  const isMember = clan?.clan_members.some(m => m.user_id === user?.id) ?? false;
+  const isMember = clan?.clan_members?.some(m => m.user_id === user?.id) ?? false;
   const isCreator = clan?.creator_id === user?.id;
 
   const handleLeaveClan = async () => {

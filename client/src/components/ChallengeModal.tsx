@@ -246,7 +246,7 @@ export default function ChallengeModal({
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 13, fontWeight: 700, flexShrink: 0,
                       }}>
-                        {s.username[0]?.toUpperCase() || '?'}
+                        {(s.username ?? '?')[0]?.toUpperCase() || '?'}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ color: '#E2E8F0', fontSize: 14, fontWeight: 500 }}>

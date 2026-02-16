@@ -67,7 +67,7 @@ export default function CreatePrediction() {
 
   // Filter existing shows for suggestions
   const suggestions = category && showName.trim().length >= 1
-    ? shows.filter(s => s.category === category && s.title.toLowerCase().includes(showName.trim().toLowerCase()))
+    ? shows.filter(s => s.category === category && (s.title ?? '').toLowerCase().includes(showName.trim().toLowerCase()))
     : [];
 
   // Find or create show, returns show ID
@@ -76,7 +76,7 @@ export default function CreatePrediction() {
     if (!trimmed || !category) return null;
 
     const existing = shows.find(
-      s => s.category === category && s.title.toLowerCase() === trimmed.toLowerCase()
+      s => s.category === category && (s.title ?? '').toLowerCase() === trimmed.toLowerCase()
     );
     if (existing) return existing.id;
 

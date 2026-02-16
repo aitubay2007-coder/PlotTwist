@@ -355,7 +355,7 @@ function ClanLeaderboardTable({ clans, loading, isMobile, t }: {
 
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ color: '#FFD60A', fontWeight: 700, fontSize: isMobile ? 13 : 15 }}>
-                    {clan.total_reputation.toLocaleString()}
+                    {(clan.total_reputation ?? 0).toLocaleString()}
                   </span>
                 </div>
               </Link>
