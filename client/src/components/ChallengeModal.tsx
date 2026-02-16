@@ -50,7 +50,7 @@ export default function ChallengeModal({
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const maxAmount = user?.coins ?? 0;
   const query = opponentUsername.replace(/^@/, '').trim();
