@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -41,7 +41,9 @@ export default function ChallengeModal({
 }: ChallengeModalProps) {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const [opponentUsername, setOpponentUsername] = useState('');
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [typedValue, setTypedValue] = useState('');
   const [selectedPredictionId, setSelectedPredictionId] = useState(predictionId ?? '');
   const [position, setPosition] = useState<'yes' | 'no'>('yes');
   const [amount, setAmount] = useState(MIN_AMOUNT);
@@ -50,20 +52,22 @@ export default function ChallengeModal({
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [inputEventCount, setInputEventCount] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const maxAmount = user?.coins ?? 0;
-  const query = opponentUsername.replace(/^@/, '').trim();
-
-  // Dropdown is visible: has text, not dismissed after selection
+  const query = typedValue.replace(/^@/, '').trim();
   const dropdownVisible = query.length >= 1 && !dismissed;
 
-  // Reset dismissed flag whenever user types
-  useEffect(() => {
+  // Read input value directly from DOM (bypasses React controlled input issues on iOS)
+  const handleNativeInput = useCallback(() => {
+    const val = inputRef.current?.value ?? '';
+    setTypedValue(val);
     setDismissed(false);
-  }, [opponentUsername]);
+    setInputEventCount(c => c + 1);
+  }, []);
 
-  // Search users when typing
+  // Search users when query changes
   useEffect(() => {
     if (query.length < 1) {
       setSuggestions([]);
@@ -100,28 +104,32 @@ export default function ChallengeModal({
   };
 
   const handleClose = () => {
-    setOpponentUsername('');
+    if (inputRef.current) inputRef.current.value = '';
+    setTypedValue('');
     setSelectedPredictionId(predictionId ?? '');
     setPosition('yes');
     setAmount(MIN_AMOUNT);
     setSuggestions([]);
     setDismissed(false);
+    setInputEventCount(0);
     onClose();
   };
 
   const handleSelectUser = (username: string) => {
+    if (inputRef.current) inputRef.current.value = username;
+    setTypedValue(username);
     setDismissed(true);
-    setOpponentUsername(username);
     setSuggestions([]);
   };
 
   const handleSend = async () => {
+    const finalUsername = (inputRef.current?.value ?? typedValue).trim().replace(/^@/, '');
     const pid = predictionId ?? selectedPredictionId;
-    if (!opponentUsername.trim() || !pid || amount < MIN_AMOUNT) return;
+    if (!finalUsername || !pid || amount < MIN_AMOUNT) return;
     setIsSubmitting(true);
     try {
       await onChallengeSent({
-        opponentUsername: opponentUsername.trim().replace(/^@/, ''),
+        opponentUsername: finalUsername,
         predictionId: pid,
         position,
         amount,
@@ -132,8 +140,9 @@ export default function ChallengeModal({
     }
   };
 
+  const finalUsername = (typedValue || '').trim().replace(/^@/, '');
   const canSend =
-    opponentUsername.trim().length > 0 &&
+    finalUsername.length > 0 &&
     (predictionId || selectedPredictionId) &&
     amount >= MIN_AMOUNT &&
     amount <= maxAmount;
@@ -193,18 +202,21 @@ export default function ChallengeModal({
               </button>
             </div>
 
-            {/* Opponent with autocomplete */}
+            {/* Opponent — UNCONTROLLED input to bypass iOS issues */}
             <div style={{ marginBottom: 16, position: 'relative', zIndex: 20 }}>
               <label style={labelStyle}>{t('challenges.select_user')}</label>
               <div style={{ position: 'relative' }}>
                 <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#475569', pointerEvents: 'none' }} />
                 <input
+                  ref={inputRef}
                   type="text"
-                  value={opponentUsername}
-                  onChange={(e) => setOpponentUsername(e.target.value)}
+                  defaultValue=""
+                  onInput={handleNativeInput}
+                  onChange={handleNativeInput}
+                  onKeyUp={handleNativeInput}
                   placeholder="@username"
                   autoComplete="off"
-                  autoCapitalize="off"
+                  autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
                   enterKeyHint="search"
@@ -213,11 +225,11 @@ export default function ChallengeModal({
               </div>
 
               {/* DEBUG: remove after testing */}
-              <div style={{ padding: '4px 8px', marginTop: 4, background: '#FF4757', color: '#fff', fontSize: 11, borderRadius: 6 }}>
-                DEBUG: query="{query}" | len={query.length} | dismissed={String(dismissed)} | visible={String(dropdownVisible)} | loading={String(searchLoading)} | results={suggestions.length} | user={user?.id ? 'yes' : 'no'}
+              <div style={{ padding: '4px 8px', marginTop: 4, background: '#FF4757', color: '#fff', fontSize: 10, borderRadius: 6, wordBreak: 'break-all' }}>
+                q="{query}" | d={String(dismissed)} | v={String(dropdownVisible)} | ld={String(searchLoading)} | r={suggestions.length} | ev={inputEventCount} | dom="{inputRef.current?.value ?? '?'}"
               </div>
 
-              {/* Suggestions dropdown — always rendered inline when visible */}
+              {/* Suggestions dropdown */}
               {dropdownVisible && (
                 <div style={{
                   background: '#1E293B', border: '2px solid #FFD60A', borderRadius: 10,
