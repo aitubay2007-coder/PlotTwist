@@ -52,7 +52,6 @@ export default function ChallengeModal({
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [inputEventCount, setInputEventCount] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const maxAmount = user?.coins ?? 0;
@@ -64,7 +63,6 @@ export default function ChallengeModal({
     const val = inputRef.current?.value ?? '';
     setTypedValue(val);
     setDismissed(false);
-    setInputEventCount(c => c + 1);
   }, []);
 
   // Search users when query changes
@@ -111,7 +109,6 @@ export default function ChallengeModal({
     setAmount(MIN_AMOUNT);
     setSuggestions([]);
     setDismissed(false);
-    setInputEventCount(0);
     onClose();
   };
 
@@ -222,11 +219,6 @@ export default function ChallengeModal({
                   enterKeyHint="search"
                   style={{ ...inputStyle, paddingLeft: 36 }}
                 />
-              </div>
-
-              {/* DEBUG: remove after testing */}
-              <div style={{ padding: '4px 8px', marginTop: 4, background: '#FF4757', color: '#fff', fontSize: 10, borderRadius: 6, wordBreak: 'break-all' }}>
-                q="{query}" | d={String(dismissed)} | v={String(dropdownVisible)} | ld={String(searchLoading)} | r={suggestions.length} | ev={inputEventCount} | dom="{inputRef.current?.value ?? '?'}"
               </div>
 
               {/* Suggestions dropdown */}
