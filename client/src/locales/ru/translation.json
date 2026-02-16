@@ -158,7 +158,17 @@
     "hall_of_fame": "Зал Славы",
     "all_members": "Все Участники",
     "no_members": "Пока нет участников",
-    "xp_label": "XP"
+    "xp_label": "XP",
+    "browse_all": "Все Кланы",
+    "top_clans": "Топ Кланов",
+    "my_clans": "Мои Кланы",
+    "search_placeholder": "Поиск кланов...",
+    "no_clans_found": "Кланы не найдены",
+    "view_clan": "Посмотреть",
+    "member": "Участник",
+    "period_all": "За все время",
+    "period_month": "За месяц",
+    "period_week": "За неделю"
   },
   "challenges": {
     "title": "Вызовы",

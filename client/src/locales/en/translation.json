@@ -158,7 +158,17 @@
     "hall_of_fame": "Hall of Fame",
     "all_members": "All Members",
     "no_members": "No members yet",
-    "xp_label": "XP"
+    "xp_label": "XP",
+    "browse_all": "All Clans",
+    "top_clans": "Top Clans",
+    "my_clans": "My Clans",
+    "search_placeholder": "Search clans...",
+    "no_clans_found": "No clans found",
+    "view_clan": "View Clan",
+    "member": "Member",
+    "period_all": "All Time",
+    "period_month": "This Month",
+    "period_week": "This Week"
   },
   "challenges": {
     "title": "Challenges",

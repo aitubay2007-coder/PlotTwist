@@ -80,6 +80,32 @@ export default function ClanDetail() {
 
   const isMember = clan?.clan_members?.some(m => m.user_id === user?.id) ?? false;
   const isCreator = clan?.creator_id === user?.id;
+  const [joining, setJoining] = useState(false);
+
+  const handleJoinClan = async () => {
+    if (!user || !clan) return;
+    setJoining(true);
+    try {
+      const { data: existing } = await supabase
+        .from('clan_members')
+        .select('id')
+        .eq('clan_id', clan.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (existing) { toast.error(t('clans.already_joined')); return; }
+
+      const { error } = await supabase
+        .from('clan_members')
+        .insert({ clan_id: clan.id, user_id: user.id, role: 'member' });
+      if (error) throw error;
+      toast.success(t('clans.joined_success'));
+      fetchClan();
+    } catch {
+      toast.error(t('clans.join_failed'));
+    } finally {
+      setJoining(false);
+    }
+  };
 
   const handleLeaveClan = async () => {
     if (!user || !clan) return;
@@ -212,6 +238,36 @@ export default function ClanDetail() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8, alignSelf: isMobile ? 'stretch' : 'flex-start' }}>
+              {!isMember && user && (
+                <button
+                  onClick={handleJoinClan}
+                  disabled={joining}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '10px 22px', borderRadius: 10, fontSize: 14, fontWeight: 700,
+                    background: '#FFD60A', border: 'none',
+                    color: '#0B1120', cursor: 'pointer', justifyContent: 'center',
+                    opacity: joining ? 0.5 : 1,
+                  }}
+                >
+                  <Users size={16} />
+                  {joining ? t('common.loading') : t('clans.join_btn')}
+                </button>
+              )}
+              {!isMember && !user && (
+                <Link
+                  to="/login"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '10px 22px', borderRadius: 10, fontSize: 14, fontWeight: 700,
+                    background: '#FFD60A', border: 'none', textDecoration: 'none',
+                    color: '#0B1120', justifyContent: 'center',
+                  }}
+                >
+                  <Users size={16} />
+                  {t('clans.join_btn')}
+                </Link>
+              )}
               <button
                 onClick={copyInvite}
                 style={{
