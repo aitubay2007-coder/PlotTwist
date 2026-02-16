@@ -388,7 +388,7 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
             {prediction.title}
           </h3>
           <p style={{ fontSize: isMobile ? 11 : 12, color: '#888', margin: '0 0 12px' }}>
-            {prediction.shows?.title} {prediction.profiles && `· @${prediction.profiles.username}`}
+            {prediction.shows?.title} {prediction.profiles?.username && `· @${prediction.profiles.username}`}
           </p>
         </div>
 

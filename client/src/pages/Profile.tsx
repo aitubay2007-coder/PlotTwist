@@ -179,7 +179,7 @@ export default function Profile() {
                 }}
               >
                 <Gift size={16} />
-                {claimingBonus ? '...' : t('profile.daily_bonus')}
+                {claimingBonus ? t('common.loading') : t('profile.daily_bonus')}
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(true)}
