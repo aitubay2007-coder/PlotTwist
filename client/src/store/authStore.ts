@@ -81,10 +81,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
     }
 
-    supabase.auth.onAuthStateChange(async (event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_IN') await get().fetchProfile();
       else if (event === 'SIGNED_OUT') set({ user: null, isAuthenticated: false });
     });
+    set({ _authSubscription: subscription } as Partial<ReturnType<typeof get>>);
   },
 
   login: async (email, password) => {

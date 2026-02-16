@@ -242,7 +242,7 @@ export default function ClanChat({ clanId }: { clanId: string }) {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 10, fontWeight: 700,
                       }}>
-                        {(msg.profiles?.username || '?')[0].toUpperCase()}
+                        {((msg.profiles?.username || '?')[0] || '?').toUpperCase()}
                       </div>
                       <span style={{ fontSize: 11, fontWeight: 600, color: mine ? '#FFD60A' : '#94A3B8' }}>
                         {mine ? t('chat.you') : `@${msg.profiles?.username || 'unknown'}`}

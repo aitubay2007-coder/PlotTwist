@@ -22,6 +22,7 @@ interface PredictionCardProps {
 function formatRelativeTime(deadline: string, t: TFunction): string {
   const now = new Date();
   const end = new Date(deadline);
+  if (isNaN(end.getTime())) return '—';
   const diffMs = end.getTime() - now.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));

@@ -26,6 +26,7 @@ export default function PredictionDetail() {
   const isMobile = useIsMobile();
 
   const fetchPrediction = async () => {
+    if (!id) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -46,7 +47,7 @@ export default function PredictionDetail() {
     }
   };
 
-  useEffect(() => { fetchPrediction(); }, [id]);
+  useEffect(() => { if (id) fetchPrediction(); }, [id]);
 
   const handleBet = async (position: string, amount: number) => {
     if (!user || !prediction) return;

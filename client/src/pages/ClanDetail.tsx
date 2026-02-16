@@ -47,10 +47,11 @@ export default function ClanDetail() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    fetchClan();
+    if (id) fetchClan();
   }, [id]);
 
   const fetchClan = async () => {
+    if (!id) return;
     try {
       const { data, error } = await supabase
         .from('clans')

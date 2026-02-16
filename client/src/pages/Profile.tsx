@@ -153,7 +153,7 @@ export default function Profile() {
               {user.display_name && <p style={{ color: '#E2E8F0', fontSize: 18, marginTop: 4 }}>{user.display_name}</p>}
               {user.country && <p style={{ color: '#64748B', fontSize: 14, marginTop: 4 }}>{COUNTRIES.find(c => c.code === user.country)?.label || user.country}</p>}
               <p style={{ color: '#64748B', fontSize: 14, marginTop: 4 }}>
-                {t('profile.joined')} {new Date(user.created_at).toLocaleDateString()}
+                {t('profile.joined')} {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
               </p>
             </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: isMobile ? 'center' : undefined }}>

@@ -85,7 +85,7 @@ export default function CreatePrediction() {
       .insert({ title: trimmed, category })
       .select('id')
       .single();
-    if (error) throw error;
+    if (error || !data) throw error || new Error('Failed to create show');
     return data.id;
   }
 
