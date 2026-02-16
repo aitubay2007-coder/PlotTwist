@@ -112,7 +112,7 @@ export default function Clans() {
         .select('id')
         .single();
 
-      if (clanError) throw clanError;
+      if (clanError || !clanData) throw clanError || new Error('Failed to create clan');
 
       const { error: memberError } = await supabase
         .from('clan_members')
@@ -279,7 +279,7 @@ export default function Clans() {
                   <p style={{ color: '#64748B', fontSize: 14, margin: '0 0 12px' }}>{clan.clans.description}</p>
                 )}
                 <div style={{ color: '#64748B', fontSize: 12 }}>
-                  {t('clans.joined')} {new Date(clan.joined_at).toLocaleDateString()}
+                  {t('clans.joined')} {clan.joined_at ? new Date(clan.joined_at).toLocaleDateString() : '—'}
                 </div>
               </Link>
             </motion.div>

@@ -337,7 +337,7 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
               padding: '3px 10px', borderRadius: 4, marginBottom: 8,
               letterSpacing: 1,
             }}>
-              {prediction.shows.category}
+              {prediction.shows?.category}
             </span>
           )}
           <h3 style={{
@@ -481,7 +481,9 @@ function Skeleton({ h }: { h: number }) {
 }
 
 function timeLeft(d: string) {
-  const ms = new Date(d).getTime() - Date.now();
+  const t = new Date(d).getTime();
+  if (isNaN(t)) return '—';
+  const ms = t - Date.now();
   if (ms <= 0) return '⏰';
   const days = Math.floor(ms / 86400000);
   if (days > 0) return `${days}d`;

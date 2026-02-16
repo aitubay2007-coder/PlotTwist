@@ -45,7 +45,8 @@ function getStatusBadge(
   deadline: string,
   t: TFunction
 ) {
-  const isExpired = new Date(deadline).getTime() <= Date.now();
+  const deadlineMs = new Date(deadline).getTime();
+  const isExpired = !isNaN(deadlineMs) && deadlineMs <= Date.now();
 
   if (status === 'cancelled' || (status === 'active' && isExpired)) {
     return (

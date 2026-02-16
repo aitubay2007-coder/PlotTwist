@@ -192,7 +192,7 @@ export default function ClanDetail() {
                     fontSize: isMobile ? 28 : 40, color: '#FFD60A',
                     margin: 0, lineHeight: 1.1,
                   }}>{clan.name}</h1>
-                  <ClanBadge level={clan.level} size={isMobile ? 'sm' : 'md'} />
+                  <ClanBadge level={clan.level ?? 1} size={isMobile ? 'sm' : 'md'} />
                 </div>
                 {clan.description && (
                   <p style={{ color: '#94A3B8', marginTop: 6, fontSize: isMobile ? 13 : 14, lineHeight: 1.4, maxWidth: 400 }}>
@@ -205,7 +205,7 @@ export default function ClanDetail() {
                   </span>
                   <span style={{ color: '#334155' }}>|</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#64748B', fontSize: 13 }}>
-                    <Zap size={14} color={levelInfo.color} /> {clan.xp.toLocaleString()} XP
+                    <Zap size={14} color={levelInfo.color} /> {(clan.xp ?? 0).toLocaleString()} XP
                   </span>
                 </div>
               </div>

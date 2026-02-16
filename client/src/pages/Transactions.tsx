@@ -116,7 +116,7 @@ export default function Transactions() {
                     {t(`transactions.type_${tx.type}`, { defaultValue: tx.description || tx.type })}
                   </div>
                   <div style={{ color: '#475569', fontSize: 12, marginTop: 2 }}>
-                    {new Date(tx.created_at).toLocaleDateString()} · {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {tx.created_at ? `${new Date(tx.created_at).toLocaleDateString()} · ${new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '—'}
                   </div>
                 </div>
                 <div style={{

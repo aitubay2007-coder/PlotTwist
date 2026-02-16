@@ -106,8 +106,8 @@ export default function ClanChat({ clanId }: { clanId: string }) {
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'clan_messages', filter: `clan_id=eq.${clanId}` },
         (payload) => {
-          const deletedId = (payload.old as { id: string }).id;
-          setMessages(prev => prev.filter(m => m.id !== deletedId));
+          const deletedId = (payload.old as { id?: string })?.id;
+          if (deletedId) setMessages(prev => prev.filter(m => m.id !== deletedId));
         }
       )
       .subscribe();
@@ -166,6 +166,7 @@ export default function ClanChat({ clanId }: { clanId: string }) {
   // Format time
   const formatTime = (iso: string) => {
     const d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));

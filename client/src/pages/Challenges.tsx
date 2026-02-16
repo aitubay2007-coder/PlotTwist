@@ -195,7 +195,7 @@ export default function Challenges() {
                   <p style={{ color: '#64748B', fontSize: 14, margin: '0 0 6px' }}>{challenge.predictions?.title}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <span style={{ color: '#FFD60A', fontWeight: 700, fontSize: 18 }}>
-                      {challenge.amount.toLocaleString()} {t('common.coins')}
+                      {(challenge.amount ?? 0).toLocaleString()} {t('common.coins')}
                     </span>
                     <span style={{
                       fontSize: 12, fontWeight: 700,

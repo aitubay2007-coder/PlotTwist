@@ -86,7 +86,9 @@ export default function PredictionComments({ predictionId }: { predictionId: str
   };
 
   const timeAgo = (date: string) => {
-    const ms = Date.now() - new Date(date).getTime();
+    const parsed = new Date(date).getTime();
+    if (isNaN(parsed)) return '—';
+    const ms = Date.now() - parsed;
     const mins = Math.floor(ms / 60000);
     if (mins < 1) return t('comments.just_now');
     if (mins < 60) return `${mins}m`;
