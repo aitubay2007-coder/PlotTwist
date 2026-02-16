@@ -26,6 +26,17 @@ export default function PredictionComments({ predictionId }: { predictionId: str
 
   useEffect(() => {
     fetchComments();
+
+    const channel = supabase
+      .channel(`comments-${predictionId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'prediction_comments', filter: `prediction_id=eq.${predictionId}` },
+        () => { fetchComments(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [predictionId]);
 
   const fetchComments = async () => {

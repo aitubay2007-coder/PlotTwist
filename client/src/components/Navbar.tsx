@@ -86,7 +86,7 @@ export default function Navbar() {
                   }}>
                     <Coins size={13} color="#FFD60A" />
                     <span style={{ fontSize: 12, fontWeight: 700, color: '#FFD60A' }}>
-                      {user.coins.toLocaleString()}
+                      {(user.coins ?? 0).toLocaleString()}
                     </span>
                   </div>
                 </>
@@ -103,7 +103,7 @@ export default function Navbar() {
                     border: '1px solid rgba(255,214,10,0.25)',
                   }}>
                     <Coins size={14} color="#FFD60A" />
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#FFD60A' }}>{user.coins.toLocaleString()}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#FFD60A' }}>{(user.coins ?? 0).toLocaleString()}</span>
                   </div>
                   <Link to="/profile" style={{
                     display: 'flex', alignItems: 'center', gap: 6,
@@ -116,7 +116,7 @@ export default function Navbar() {
                     }}>
                       <User size={14} color="#64748B" />
                     </div>
-                    <span>{user.username}</span>
+                    <span>{user.username ?? '?'}</span>
                   </Link>
                   <button onClick={() => setShowLogoutConfirm(true)}
                     style={{ border: 'none', background: 'transparent', padding: '6px', cursor: 'pointer' }}

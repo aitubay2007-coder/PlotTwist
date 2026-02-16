@@ -66,12 +66,14 @@ export default function BetModal({
     }
   };
 
-  const totalPool = prediction.total_yes + prediction.total_no;
+  const totalPool = (prediction.total_yes ?? 0) + (prediction.total_no ?? 0);
+  const yesPool = (prediction.total_yes ?? 0) + amount;
+  const noPool = (prediction.total_no ?? 0) + amount;
   const potentialReturn =
     position === 'yes'
-      ? amount * ((totalPool + amount) / (prediction.total_yes + amount || 1))
+      ? amount * ((totalPool + amount) / Math.max(yesPool, 1))
       : position === 'no'
-        ? amount * ((totalPool + amount) / (prediction.total_no + amount || 1))
+        ? amount * ((totalPool + amount) / Math.max(noPool, 1))
         : 0;
   const potentialProfit = potentialReturn > 0 ? potentialReturn - amount : 0;
 

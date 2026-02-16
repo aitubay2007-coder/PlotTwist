@@ -253,7 +253,7 @@ export default function ChallengeModal({
                           @{s.username}
                         </div>
                         <div style={{ color: '#64748B', fontSize: 11 }}>
-                          ⭐ {s.reputation.toLocaleString()}
+                          ⭐ {(s.reputation ?? 0).toLocaleString()}
                         </div>
                       </div>
                     </button>

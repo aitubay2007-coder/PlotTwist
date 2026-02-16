@@ -34,31 +34,34 @@ function formatRelativeTime(deadline: string, t: TFunction): string {
   return t('predictions.ending_soon');
 }
 
+const badgeBase: React.CSSProperties = {
+  display: 'inline-block',
+  padding: '2px 8px', fontSize: 11, fontWeight: 600, borderRadius: 20,
+};
+
 function getStatusBadge(
   status: PredictionCardPrediction['status'],
   deadline: string,
   t: TFunction
 ) {
-  const now = new Date();
-  const end = new Date(deadline);
-  const isExpired = end.getTime() <= now.getTime();
+  const isExpired = new Date(deadline).getTime() <= Date.now();
 
   if (status === 'cancelled' || (status === 'active' && isExpired)) {
     return (
-      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-pt-red/20 text-pt-red">
+      <span style={{ ...badgeBase, background: 'rgba(255,71,87,0.15)', color: '#FF4757' }}>
         {t('predictions.expired')}
       </span>
     );
   }
   if (status === 'resolved_yes' || status === 'resolved_no') {
     return (
-      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-pt-yellow/20 text-pt-yellow">
+      <span style={{ ...badgeBase, background: 'rgba(255,214,10,0.15)', color: '#FFD60A' }}>
         {t('predictions.resolved')}
       </span>
     );
   }
   return (
-    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-pt-green/20 text-pt-green">
+    <span style={{ ...badgeBase, background: 'rgba(46,213,115,0.15)', color: '#2ED573' }}>
       {t('predictions.active')}
     </span>
   );
@@ -78,54 +81,74 @@ export default function PredictionCard({ prediction }: PredictionCardProps) {
     profiles,
   } = prediction;
 
-  const total = total_yes + total_no || 1;
-  const yesPercent = (total_yes / total) * 100;
+  const total = (total_yes ?? 0) + (total_no ?? 0) || 1;
+  const yesPercent = ((total_yes ?? 0) / total) * 100;
   const category = shows?.category ?? 'other';
 
   return (
-    <Link to={`/prediction/${id}`} className="block">
+    <Link to={`/prediction/${id}`} style={{ display: 'block', textDecoration: 'none' }}>
       <motion.article
         whileHover={{ scale: 1.02 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        className="bg-pt-card hover:bg-pt-card-hover border border-pt-yellow/20 hover:border-pt-yellow/50 rounded-lg p-4 transition-colors cursor-pointer"
+        style={{
+          background: '#141C2B', border: '1px solid rgba(255,214,10,0.15)',
+          borderRadius: 12, padding: 16, cursor: 'pointer',
+          transition: 'border-color 0.2s, background 0.2s',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = 'rgba(255,214,10,0.4)';
+          e.currentTarget.style.background = '#1C2538';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = 'rgba(255,214,10,0.15)';
+          e.currentTarget.style.background = '#141C2B';
+        }}
       >
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <span className="px-2 py-0.5 text-xs font-medium rounded bg-pt-yellow/20 text-pt-yellow capitalize">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+          <span style={{
+            ...badgeBase,
+            background: 'rgba(255,214,10,0.12)', color: '#FFD60A', textTransform: 'capitalize',
+          }}>
             {t(`categories.${category}`, { defaultValue: category })}
           </span>
           {getStatusBadge(status, deadline, t)}
         </div>
 
-        <h3 className="font-semibold text-pt-white mb-1 line-clamp-2">{title}</h3>
+        <h3 style={{
+          fontWeight: 600, color: '#E2E8F0', marginBottom: 4,
+          fontSize: 15, lineHeight: 1.4,
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}>
+          {title}
+        </h3>
+
         {shows?.title && profiles?.username && (
-          <p className="text-sm text-pt-gray mb-3">
+          <p style={{ fontSize: 13, color: '#64748B', marginBottom: 12 }}>
             {shows.title} · @{profiles.username}
           </p>
         )}
         {shows?.title && !profiles?.username && (
-          <p className="text-sm text-pt-gray mb-3">{shows.title}</p>
+          <p style={{ fontSize: 13, color: '#64748B', marginBottom: 12 }}>{shows.title}</p>
         )}
         {!shows?.title && profiles?.username && (
-          <p className="text-sm text-pt-gray mb-3">@{profiles.username}</p>
+          <p style={{ fontSize: 13, color: '#64748B', marginBottom: 12 }}>@{profiles.username}</p>
         )}
 
         {/* YES/NO bar */}
-        <div className="h-2 rounded-full overflow-hidden bg-pt-dark flex mb-3">
-          <div
-            className="bg-pt-green transition-all"
-            style={{ width: `${yesPercent}%` }}
-          />
-          <div
-            className="bg-pt-red transition-all"
-            style={{ width: `${100 - yesPercent}%` }}
-          />
+        <div style={{
+          height: 6, borderRadius: 3, overflow: 'hidden',
+          display: 'flex', background: '#0B1120', marginBottom: 12,
+        }}>
+          <div style={{ width: `${yesPercent}%`, background: '#2ED573', transition: 'width 0.3s' }} />
+          <div style={{ width: `${100 - yesPercent}%`, background: '#FF4757', transition: 'width 0.3s' }} />
         </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-pt-yellow font-medium">
-            {t('predictions.pool')}: {total_pool.toLocaleString()}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+          <span style={{ color: '#FFD60A', fontWeight: 600 }}>
+            {t('predictions.pool')}: {(total_pool ?? 0).toLocaleString()}
           </span>
-          <span className="text-pt-gray">
+          <span style={{ color: '#64748B' }}>
             {formatRelativeTime(deadline, t)}
           </span>
         </div>
