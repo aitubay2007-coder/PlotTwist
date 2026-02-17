@@ -207,6 +207,7 @@
     "clans_tab": "Clans",
     "clan_name": "Clan",
     "rating": "Rating",
+    "no_results": "No players found for this filter",
     "all_countries": "All Countries",
     "kazakhstan": "Kazakhstan",
     "united_states": "United States",
@@ -281,6 +282,7 @@
   "common": {
     "loading": "Loading...",
     "error": "Something went wrong",
+    "timeout": "Server is slow, please try again",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",

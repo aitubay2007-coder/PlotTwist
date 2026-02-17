@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users, Link as LinkIcon, X, Search, Trophy, Crown, Zap } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -77,10 +77,10 @@ export default function Clans() {
     if (!user) { setLoading(false); return; }
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from('clan_members')
         .select('role, joined_at, clans(id, name, description, invite_code, xp, level, created_at)')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id), 8000);
       if (error) throw error;
       const rows = (data as unknown as ClanRow[]) || [];
       setMyClans(rows);
@@ -95,11 +95,11 @@ export default function Clans() {
   const fetchAllClans = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from('clans')
         .select('id, name, description, xp, level, created_at')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50), 8000);
       if (error) throw error;
       setAllClans((data as PublicClan[]) || []);
 
@@ -135,7 +135,7 @@ export default function Clans() {
         query = query.gte('created_at', monthAgo);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await withTimeout(query, 8000);
       if (error) throw error;
       setTopClans((data as PublicClan[]) || []);
     } catch {

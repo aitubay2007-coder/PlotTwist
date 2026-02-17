@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Swords, Check, X, Clock, Trophy } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -39,11 +39,11 @@ export default function Challenges() {
   const fetchChallenges = async () => {
     if (!user) return;
     try {
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from('challenges')
         .select('*, predictions(title), challenger:profiles!challenger_id(username, avatar_url), challenged:profiles!challenged_id(username, avatar_url)')
         .or(`challenger_id.eq.${user.id},challenged_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }), 8000);
 
       if (error) throw error;
       setChallenges((data as unknown as ChallengeRow[]) || []);

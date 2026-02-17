@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Coins, Star, Target, BarChart3, Gift, LogOut, Edit3, TrendingUp, Trophy, ArrowRight } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -47,9 +47,10 @@ export default function Profile() {
   const handleDailyBonus = async () => {
     setClaimingBonus(true);
     try {
-      const { data, error } = await supabase.rpc('claim_daily_bonus', {
-        user_id_param: user.id,
-      });
+      const { data, error } = await withTimeout(
+        supabase.rpc('claim_daily_bonus', { user_id_param: user.id }),
+        8000
+      );
       if (error) throw error;
       const result = data as { success?: boolean; error?: string };
       if (result.error === 'already_claimed') {
@@ -64,7 +65,10 @@ export default function Profile() {
       toast.success(t('profile.bonus_claimed'));
       fetchProfile();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : t('profile.bonus_failed'));
+      const msg = err instanceof Error && err.message === 'Request timeout'
+        ? t('common.timeout')
+        : err instanceof Error ? err.message : t('profile.bonus_failed');
+      toast.error(msg);
     } finally {
       setClaimingBonus(false);
     }
@@ -73,28 +77,24 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return;
     // Fetch user's predictions (all, for accurate stats)
-    supabase
-      .from('predictions')
-      .select('id, title, status')
-      .eq('creator_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(500)
-      .then(({ data, error }) => {
-        if (error) console.error('Failed to fetch predictions:', error);
-        setMyPredictions(data || []);
-      });
+    withTimeout(
+      supabase.from('predictions').select('id, title, status')
+        .eq('creator_id', user.id).order('created_at', { ascending: false }).limit(100),
+      8000
+    ).then(({ data, error }) => {
+      if (error) console.error('Failed to fetch predictions:', error);
+      setMyPredictions(data || []);
+    }).catch(() => setMyPredictions([]));
 
     // Fetch user's bets (all, for accurate win rate)
-    supabase
-      .from('bets')
-      .select('id, prediction_id, position, amount, predictions(title, status)')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(500)
-      .then(({ data, error }) => {
-        if (error) console.error('Failed to fetch bets:', error);
-        setMyBets((data as unknown as typeof myBets) || []);
-      });
+    withTimeout(
+      supabase.from('bets').select('id, prediction_id, position, amount, predictions(title, status)')
+        .eq('user_id', user.id).order('created_at', { ascending: false }).limit(100),
+      8000
+    ).then(({ data, error }) => {
+      if (error) console.error('Failed to fetch bets:', error);
+      setMyBets((data as unknown as typeof myBets) || []);
+    }).catch(() => setMyBets([]));
   }, [user]);
 
   const openEdit = () => {

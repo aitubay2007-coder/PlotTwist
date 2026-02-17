@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Swords, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle, Globe, Users, Shield, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
-import { supabase } from '../lib/supabase';
+import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import BetModal from '../components/BetModal';
 import ChallengeModal from '../components/ChallengeModal';
@@ -32,11 +32,11 @@ export default function PredictionDetail() {
     if (!id) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from('predictions')
         .select('*, shows(title, poster_url, category), profiles(username, avatar_url)')
         .eq('id', id)
-        .single();
+        .single(), 8000);
 
       if (error || !data) {
         setPrediction(null);

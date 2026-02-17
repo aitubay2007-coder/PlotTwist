@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Users, Copy, Crown, Trophy, TrendingUp, Coins, Target, Zap, LogOut, Trash2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { ClanBadge, ClanXPBar, ClanLevelShield } from '../components/ClanBadge';
@@ -53,11 +53,11 @@ export default function ClanDetail() {
   const fetchClan = async () => {
     if (!id) return;
     try {
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from('clans')
         .select('id, name, description, invite_code, creator_id, xp, level, created_at, clan_members(user_id, role, joined_at, profiles(username, avatar_url, coins, reputation))')
         .eq('id', id)
-        .single();
+        .single(), 8000);
 
       if (error || !data) {
         setClan(null);

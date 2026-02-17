@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trophy, Globe, MapPin, Coins, Shield, Users } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, withTimeout } from '../lib/supabase';
 import type { Profile, ClanLeaderboardEntry } from '../types';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { ClanBadge } from '../components/ClanBadge';
@@ -38,14 +38,18 @@ export default function Leaderboard() {
         query = query.eq('country', country);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await withTimeout(query, 8000);
 
       if (error) {
         console.error('Leaderboard fetch error:', error);
         setPlayers(getDemoLeaderboard());
       } else if (!data || data.length === 0) {
-        // No real users yet — show demo as placeholder
-        setPlayers(getDemoLeaderboard());
+        // When filtering by country and no results, show empty — not global demo
+        if (tab === 'country' && country) {
+          setPlayers([]);
+        } else {
+          setPlayers(getDemoLeaderboard());
+        }
       } else {
         setPlayers(data as Profile[]);
       }
@@ -60,7 +64,7 @@ export default function Leaderboard() {
   const fetchClanLeaderboard = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_clan_leaderboard');
+      const { data, error } = await withTimeout(supabase.rpc('get_clan_leaderboard'), 8000);
       if (error) {
         console.error('Clan leaderboard fetch error:', error);
         setClans(getDemoClanLeaderboard());
@@ -192,6 +196,10 @@ function PlayerLeaderboardTable({ players, loading, isMobile, t }: {
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} style={{ height: 56, background: '#0B1120', borderRadius: 10, animation: 'shimmer 1.5s infinite' }} />
           ))}
+        </div>
+      ) : players.length === 0 ? (
+        <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+          <p style={{ color: '#64748B', fontSize: 14 }}>{t('leaderboard.no_results')}</p>
         </div>
       ) : (
         <div>

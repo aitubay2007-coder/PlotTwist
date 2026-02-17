@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Search, TrendingUp, Clock, Sparkles, Flame, Zap, Users, Swords } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, withTimeout } from '../lib/supabase';
 import type { Prediction } from '../types';
 import { useIsMobile, useIsTablet } from '../hooks/useMediaQuery';
 
@@ -33,11 +33,11 @@ export default function Dashboard() {
         else if (sort === 'newest') query = query.order('created_at', { ascending: false });
         else if (sort === 'ending_soon') query = query.order('deadline', { ascending: true });
 
-        const { data, error } = await query;
+        const { data, error } = await withTimeout(query, 8000);
         if (error || !data) {
           setPredictions(DEMO);
         } else if (data.length === 0) {
-          setPredictions(DEMO); // Show demo as placeholder when no real predictions yet
+          setPredictions(DEMO);
         } else {
           setPredictions(data as unknown as Prediction[]);
         }
