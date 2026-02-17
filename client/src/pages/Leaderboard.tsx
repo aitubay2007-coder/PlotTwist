@@ -330,7 +330,7 @@ function ClanLeaderboardTable({ clans, loading, isMobile, t }: {
                       }}>
                         {clan.name}
                       </span>
-                      <ClanBadge level={clan.level} size="sm" />
+                      <ClanBadge level={clan.level ?? 1} size="sm" />
                     </div>
                     {isMobile && (
                       <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
@@ -349,7 +349,7 @@ function ClanLeaderboardTable({ clans, loading, isMobile, t }: {
                 )}
                 {!isMobile && (
                   <div style={{ textAlign: 'center', color: '#E2E8F0', fontWeight: 700 }}>
-                    {t('clans.level_label')} {clan.level}
+                    {t('clans.level_label')} {clan.level ?? 1}
                   </div>
                 )}
 

@@ -173,6 +173,7 @@ export default function PredictionDetail() {
   const getDisputeHoursLeft = () => {
     if (!prediction?.resolved_at) return 0;
     const resolvedTime = new Date(prediction.resolved_at).getTime();
+    if (isNaN(resolvedTime)) return 0;
     const deadline = resolvedTime + 24 * 60 * 60 * 1000;
     return Math.max(0, Math.round((deadline - Date.now()) / (60 * 60 * 1000)));
   };
@@ -197,10 +198,11 @@ export default function PredictionDetail() {
     );
   }
 
-  const yesPercent = prediction.total_pool > 0 ? (prediction.total_yes / prediction.total_pool) * 100 : 50;
+  const yesPercent = (prediction.total_pool ?? 0) > 0 ? ((prediction.total_yes ?? 0) / (prediction.total_pool ?? 1)) * 100 : 50;
   const noPercent = 100 - yesPercent;
   const deadline = new Date(prediction.deadline);
-  const isExpired = deadline < new Date();
+  const deadlineValid = !isNaN(deadline.getTime());
+  const isExpired = deadlineValid ? deadline < new Date() : false;
   const isActive = prediction.status === 'active' && !isExpired;
 
   return (
@@ -256,7 +258,7 @@ export default function PredictionDetail() {
             <StatBox label={t('predictions.pool')} value={(prediction.total_pool ?? 0).toLocaleString()} color="#FFD60A" />
             <StatBox label={t('predictions.vote_yes')} value={(prediction.total_yes ?? 0).toLocaleString()} color="#2ED573" />
             <StatBox label={t('predictions.vote_no')} value={(prediction.total_no ?? 0).toLocaleString()} color="#FF4757" />
-            <StatBox label={t('predictions.deadline')} value={deadline?.toLocaleDateString() ?? '—'} color="#E2E8F0" />
+            <StatBox label={t('predictions.deadline')} value={deadlineValid ? deadline.toLocaleDateString() : '—'} color="#E2E8F0" />
           </div>
 
           {/* Resolved Banner */}

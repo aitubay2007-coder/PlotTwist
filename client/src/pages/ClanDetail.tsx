@@ -170,14 +170,14 @@ export default function ClanDetail() {
   const totalReputation = sortedMembers.reduce((s, m) => s + (m.profiles?.reputation || 0), 0);
   const avgReputation = sortedMembers.length > 0 ? Math.round(totalReputation / sortedMembers.length) : 0;
   const memberCount = sortedMembers.length;
-  const levelInfo = getClanLevel(clan.level);
+  const levelInfo = getClanLevel(clan.level ?? 1);
 
   // Clan power score (0–100 visual scale)
   const powerScore = Math.min(100, Math.round(
-    (Math.min(clan.level / 5, 1) * 30) +
+    (Math.min((clan.level ?? 1) / 5, 1) * 30) +
     (Math.min(memberCount / 20, 1) * 25) +
     (Math.min(totalReputation / 50000, 1) * 25) +
-    (Math.min(clan.xp / 15000, 1) * 20)
+    (Math.min((clan.xp ?? 0) / 15000, 1) * 20)
   ));
 
   const top3 = sortedMembers.slice(0, 3);
@@ -210,7 +210,7 @@ export default function ClanDetail() {
             flexDirection: isMobile ? 'column' : 'row',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 14 : 20 }}>
-              <ClanLevelShield level={clan.level} size={isMobile ? 56 : 72} />
+              <ClanLevelShield level={clan.level ?? 1} size={isMobile ? 56 : 72} />
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <h1 style={{
@@ -316,7 +316,7 @@ export default function ClanDetail() {
 
           {/* XP Bar */}
           <div style={{ marginTop: 20 }}>
-            <ClanXPBar xp={clan.xp} level={clan.level} />
+            <ClanXPBar xp={clan.xp ?? 0} level={clan.level ?? 1} />
           </div>
         </div>
 
@@ -403,7 +403,7 @@ export default function ClanDetail() {
               {[
                 { label: t('clans.power_level'), val: `${clan.level}/5` },
                 { label: t('clans.power_members'), val: memberCount.toString() },
-                { label: t('clans.xp_label'), val: clan.xp.toLocaleString() },
+                { label: t('clans.xp_label'), val: (clan.xp ?? 0).toLocaleString() },
               ].map(item => (
                 <span key={item.label} style={{
                   background: '#0B1120', padding: '4px 10px', borderRadius: 8,

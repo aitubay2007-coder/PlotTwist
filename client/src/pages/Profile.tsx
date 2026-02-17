@@ -79,7 +79,10 @@ export default function Profile() {
       .eq('creator_id', user.id)
       .order('created_at', { ascending: false })
       .limit(500)
-      .then(({ data }) => setMyPredictions(data || []));
+      .then(({ data, error }) => {
+        if (error) console.error('Failed to fetch predictions:', error);
+        setMyPredictions(data || []);
+      });
 
     // Fetch user's bets (all, for accurate win rate)
     supabase
@@ -88,7 +91,10 @@ export default function Profile() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(500)
-      .then(({ data }) => setMyBets((data as unknown as typeof myBets) || []));
+      .then(({ data, error }) => {
+        if (error) console.error('Failed to fetch bets:', error);
+        setMyBets((data as unknown as typeof myBets) || []);
+      });
   }, [user]);
 
   const openEdit = () => {

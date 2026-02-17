@@ -96,6 +96,11 @@ export default function CreatePrediction() {
       toast.error(t('create.fill_required'));
       return;
     }
+    const deadlineDate = new Date(deadline);
+    if (isNaN(deadlineDate.getTime())) {
+      toast.error(t('create.fill_required'));
+      return;
+    }
     setLoading(true);
     try {
       const showId = await findOrCreateShow();
@@ -107,7 +112,7 @@ export default function CreatePrediction() {
         show_id: showId,
         creator_id: user.id,
         mode,
-        deadline: new Date(deadline).toISOString(),
+        deadline: deadlineDate.toISOString(),
       });
       if (error) throw error;
       toast.success(t('create.success'));
