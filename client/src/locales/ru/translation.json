@@ -88,6 +88,8 @@
     "dispute_already_voted": "Ты уже голосовал",
     "dispute_window": "Окно спора: {{hours}}ч осталось",
     "dispute_window_closed": "Окно спора закрыто",
+    "creator_vote_notice": "Как автор, твой голос считается за 0.5 для честности",
+    "creator_bet_limit": "Макс. ставка автора на своё предсказание: {{max}} монет (уже поставлено: {{current}})",
     "disputed_banner": "Этот результат был оспорен",
     "dispute_votes": "{{yes}} за ДА, {{no}} за НЕТ",
     "dispute_status": "Оспорено {{count}} участниками",

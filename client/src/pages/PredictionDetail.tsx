@@ -91,7 +91,11 @@ export default function PredictionDetail() {
       });
 
       if (error) throw error;
-      const result = data as { success?: boolean; error?: string };
+      const result = data as { success?: boolean; error?: string; max?: number; current?: number };
+      if (result.error === 'creator_bet_limit') {
+        toast.error(t('predictions.creator_bet_limit', { max: result.max ?? 200, current: result.current ?? 0 }));
+        return;
+      }
       if (result.error) {
         toast.error(result.error);
         return;
@@ -383,7 +387,6 @@ export default function PredictionDetail() {
             && (prediction.status === 'resolved_yes' || prediction.status === 'resolved_no')
             && isAuthenticated
             && userHasBet
-            && user?.id !== prediction.creator_id
             && getDisputeHoursLeft() > 0
             && !disputes.some(d => d.user_id === user?.id)
             && (
@@ -403,6 +406,11 @@ export default function PredictionDetail() {
               <p style={{ color: '#64748B', fontSize: 12, marginBottom: 14 }}>
                 {t('predictions.dispute_window', { hours: getDisputeHoursLeft() })}
               </p>
+              {user?.id === prediction.creator_id && (
+                <p style={{ color: '#F59E0B', fontSize: 12, marginBottom: 12, background: 'rgba(245,158,11,0.08)', padding: '8px 12px', borderRadius: 8 }}>
+                  {t('predictions.creator_vote_notice')}
+                </p>
+              )}
               <div style={{ display: 'flex', gap: 12, flexDirection: isMobile ? 'column' as const : 'row' as const }}>
                 <button
                   onClick={() => handleDispute('yes')}

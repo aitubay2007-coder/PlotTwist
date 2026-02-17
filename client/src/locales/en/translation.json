@@ -88,6 +88,8 @@
     "dispute_already_voted": "You already voted",
     "dispute_window": "Dispute window: {{hours}}h remaining",
     "dispute_window_closed": "Dispute window closed",
+    "creator_vote_notice": "As the creator, your vote counts as 0.5 to keep things fair",
+    "creator_bet_limit": "Creator max bet on own predictions: {{max}} coins (already bet: {{current}})",
     "disputed_banner": "This result was disputed",
     "dispute_votes": "{{yes}} voted YES, {{no}} voted NO",
     "dispute_status": "Disputed by {{count}} participants",
