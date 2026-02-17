@@ -55,16 +55,22 @@ export default function ClanChat({ clanId }: { clanId: string }) {
   useEffect(() => {
     const fetchMessages = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from('clan_messages')
-        .select('id, clan_id, user_id, content, created_at, profiles(username, avatar_url)')
-        .eq('clan_id', clanId)
-        .order('created_at', { ascending: true })
-        .limit(100);
-
-      setMessages((data as unknown as ChatMessage[]) || []);
-      setLoading(false);
-      setTimeout(() => scrollToBottom(false), 50);
+      try {
+        const { data, error } = await supabase
+          .from('clan_messages')
+          .select('id, clan_id, user_id, content, created_at, profiles(username, avatar_url)')
+          .eq('clan_id', clanId)
+          .order('created_at', { ascending: true })
+          .limit(100);
+        if (error) console.error('Failed to fetch messages:', error);
+        setMessages((data as unknown as ChatMessage[]) || []);
+        setTimeout(() => scrollToBottom(false), 50);
+      } catch (err) {
+        console.error('Chat fetch error:', err);
+        setMessages([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchMessages();
@@ -80,11 +86,15 @@ export default function ClanChat({ clanId }: { clanId: string }) {
         async (payload) => {
           const newMessage = payload.new as ChatMessage;
           // Fetch profile info for the new message
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username, avatar_url')
-            .eq('id', newMessage.user_id)
-            .single();
+          let profile = null;
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', newMessage.user_id)
+              .single();
+            profile = data;
+          } catch { /* profile stays null, message still shows */ }
 
           const enriched: ChatMessage = {
             ...newMessage,
@@ -185,7 +195,8 @@ export default function ClanChat({ clanId }: { clanId: string }) {
     const curr = messages[i];
     if (prev.user_id !== curr.user_id) return true;
     // New group if > 5 min gap
-    return new Date(curr.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60 * 1000;
+    const diff = new Date(curr.created_at).getTime() - new Date(prev.created_at).getTime();
+    return isNaN(diff) || diff > 5 * 60 * 1000;
   };
 
   const isMe = (msg: ChatMessage) => msg.user_id === user?.id;

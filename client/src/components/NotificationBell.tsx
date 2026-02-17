@@ -55,34 +55,44 @@ export default function NotificationBell() {
   }, [user]);
 
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent | TouchEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener('touchstart', handleClick);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('touchstart', handleClick);
+    };
   }, []);
 
   const fetchNotifications = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(30);
-    if (data) {
-      setNotifications(data as Notification[]);
-      setUnreadCount(data.filter(n => !n.read).length);
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if (error) { console.error('Notifications fetch error:', error); return; }
+      if (data) {
+        setNotifications(data as Notification[]);
+        setUnreadCount(data.filter(n => !n.read).length);
+      }
+    } catch (err) {
+      console.error('Notifications error:', err);
     }
   };
 
   const markAllRead = async () => {
     if (!user || unreadCount === 0) return;
-    await supabase
+    const { error } = await supabase
       .from('notifications')
       .update({ read: true })
       .eq('user_id', user.id)
       .eq('read', false);
+    if (error) { console.error('Mark read error:', error); return; }
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   };
