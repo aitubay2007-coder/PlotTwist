@@ -36,9 +36,9 @@ export default function BottomNav() {
       paddingBottom: 'env(safe-area-inset-bottom, 0px)',
     }}>
       <div style={{
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         alignItems: 'center',
-        justifyContent: 'space-around',
         height: 56,
         maxWidth: 480,
         margin: '0 auto',
@@ -88,7 +88,7 @@ export default function BottomNav() {
                 alignItems: 'center',
                 gap: 2,
                 textDecoration: 'none',
-                padding: '4px 12px',
+                padding: '4px 0',
                 transition: 'all 0.2s',
               }}
             >
