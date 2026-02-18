@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle, Globe, Users, Shield, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ArrowLeft, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle, Globe, Users, Shield, ThumbsUp, ThumbsDown, Lock, Share2 } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
@@ -214,7 +214,7 @@ export default function PredictionDetail() {
         <div style={{ background: '#141C2B', border: '1px solid #243044', borderRadius: 16, padding: isMobile ? 18 : 32 }}>
           {/* Header */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8, alignItems: 'center' }}>
               {(prediction.mode ?? 'official') === 'unofficial' ? (
                 <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: 'rgba(224,64,251,0.15)', color: '#E040FB', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <Users size={12} /> {t('predictions.unofficial')}
@@ -224,6 +224,24 @@ export default function PredictionDetail() {
                   <Globe size={12} /> {t('predictions.official')}
                 </span>
               )}
+              {prediction.visibility === 'private' && (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: 'rgba(245,158,11,0.12)', color: '#F59E0B', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <Lock size={12} /> {t('create.visibility_private')}
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success(t('common.link_copied'));
+                }}
+                style={{
+                  marginLeft: 'auto', fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94A3B8',
+                  display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer',
+                }}
+              >
+                <Share2 size={12} /> {t('common.share')}
+              </button>
             </div>
             <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 700, color: '#E2E8F0', marginTop: 12, lineHeight: 1.3 }}>{prediction.title}</h1>
             {prediction.description && <p style={{ color: '#64748B', marginTop: 8 }}>{prediction.description}</p>}

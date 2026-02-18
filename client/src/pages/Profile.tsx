@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Coins, Star, Target, BarChart3, Gift, LogOut, Edit3, TrendingUp, Trophy, ArrowRight } from 'lucide-react';
+import { Coins, Star, Target, BarChart3, Gift, LogOut, Edit3, TrendingUp, Trophy, ArrowRight, Lock } from 'lucide-react';
 import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -15,7 +15,7 @@ export default function Profile() {
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [saving, setSaving] = useState(false);
-  const [myPredictions, setMyPredictions] = useState<{ id: string; title: string; status: string }[]>([]);
+  const [myPredictions, setMyPredictions] = useState<{ id: string; title: string; status: string; visibility?: string }[]>([]);
   const [myBets, setMyBets] = useState<{ id: string; prediction_id: string; position: string; amount: number; predictions: { title: string; status: string } | null }[]>([]);
   const [activityTab, setActivityTab] = useState<'predictions' | 'bets'>('predictions');
   const isMobile = useIsMobile();
@@ -62,7 +62,7 @@ export default function Profile() {
     if (!user) return;
     // Fetch user's predictions (all, for accurate stats)
     withTimeout(
-      supabase.from('predictions').select('id, title, status')
+      supabase.from('predictions').select('id, title, status, visibility')
         .eq('creator_id', user.id).order('created_at', { ascending: false }).limit(100),
       8000
     ).then(({ data, error }) => {
@@ -259,9 +259,10 @@ export default function Profile() {
                   <Link to={`/prediction/${p.id}`} key={p.id} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     background: '#0B1120', borderRadius: 12, padding: '14px 16px',
-                    textDecoration: 'none', transition: 'background 0.2s',
+                    textDecoration: 'none', transition: 'background 0.2s', gap: 8,
                   }}>
-                    <span style={{ color: '#E2E8F0', fontSize: 14, fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 12 }}>
+                    {p.visibility === 'private' && <Lock size={14} color="#F59E0B" style={{ flexShrink: 0 }} />}
+                    <span style={{ color: '#E2E8F0', fontSize: 14, fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {p.title}
                     </span>
                     <StatusBadge status={p.status} t={t} />

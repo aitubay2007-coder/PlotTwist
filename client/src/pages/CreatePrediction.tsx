@@ -41,17 +41,21 @@ export default function CreatePrediction() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.from('predictions').insert({
+      const { data: inserted, error } = await supabase.from('predictions').insert({
         title,
         description: description || null,
         creator_id: user.id,
         mode,
         visibility,
         deadline: combined.toISOString(),
-      });
+      }).select('id').single();
       if (error) throw error;
       toast.success(t('create.success'));
-      navigate('/');
+      if (visibility === 'private' && inserted?.id) {
+        navigate(`/prediction/${inserted.id}`);
+      } else {
+        navigate('/');
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t('create.failed');
       toast.error(message);
