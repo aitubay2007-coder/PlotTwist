@@ -11,15 +11,6 @@ export interface Profile {
   created_at: string;
 }
 
-export interface Show {
-  id: string;
-  title: string;
-  category: 'anime' | 'series' | 'movie' | 'sport' | 'music' | 'other';
-  poster_url: string | null;
-  status: 'ongoing' | 'completed';
-  created_at: string;
-}
-
 export interface Prediction {
   id: string;
   title: string;
@@ -36,7 +27,6 @@ export interface Prediction {
   total_no: number;
   total_pool: number;
   created_at: string;
-  shows?: Pick<Show, 'title' | 'poster_url' | 'category'> | null;
   profiles?: Pick<Profile, 'username' | 'avatar_url'>;
   bets?: Bet[];
 }

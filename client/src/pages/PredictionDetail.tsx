@@ -542,7 +542,7 @@ function ShareModal({ prediction, onClose, t, isMobile }: {
   };
 
   const handleNativeShare = async () => {
-    if (navigator.share) {
+    if (typeof navigator.share === 'function') {
       try {
         await navigator.share({
           title: `PlotTwist: ${prediction.title}`,

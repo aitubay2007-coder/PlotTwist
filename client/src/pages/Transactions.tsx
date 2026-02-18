@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Coins, TrendingUp, TrendingDown, Gift, Swords, Target } from 'lucide-react';
+import { ArrowLeft, Coins, TrendingUp, TrendingDown, Gift, Target } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -21,10 +21,10 @@ const TYPE_CONFIG: Record<string, { icon: typeof Coins; color: string; sign: '+'
   daily_bonus: { icon: Gift, color: '#2ED573', sign: '+' },
   bet_placed: { icon: TrendingDown, color: '#FF4757', sign: '-' },
   bet_won: { icon: TrendingUp, color: '#2ED573', sign: '+' },
-  challenge_sent: { icon: Swords, color: '#FF4757', sign: '-' },
-  challenge_accepted: { icon: Swords, color: '#FF4757', sign: '-' },
-  challenge_won: { icon: Swords, color: '#2ED573', sign: '+' },
-  challenge_refund: { icon: Swords, color: '#FFD60A', sign: '+' },
+  challenge_sent: { icon: Target, color: '#FF4757', sign: '-' },
+  challenge_accepted: { icon: Target, color: '#FF4757', sign: '-' },
+  challenge_won: { icon: Target, color: '#2ED573', sign: '+' },
+  challenge_refund: { icon: Target, color: '#FFD60A', sign: '+' },
 };
 
 export default function Transactions() {

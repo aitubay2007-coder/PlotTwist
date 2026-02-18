@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bell, Swords, Trophy, TrendingUp, Users, Check } from 'lucide-react';
+import { Bell, Trophy, TrendingUp, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 
@@ -15,12 +15,8 @@ interface Notification {
 }
 
 const TYPE_ICONS: Record<string, typeof Bell> = {
-  challenge_received: Swords,
-  challenge_accepted: Swords,
-  challenge_declined: Swords,
   prediction_resolved: Trophy,
   bet_won: TrendingUp,
-  clan_joined: Users,
 };
 
 export default function NotificationBell() {

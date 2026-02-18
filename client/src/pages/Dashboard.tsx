@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Search, TrendingUp, Clock, Sparkles, Flame, Zap } from 'lucide-react';
+import { Search, TrendingUp, Clock, Sparkles, Flame, Zap, Coins, Target, Trophy, BarChart3, X } from 'lucide-react';
 import { supabase, withTimeout } from '../lib/supabase';
 import type { Prediction } from '../types';
 import { useIsMobile, useIsTablet } from '../hooks/useMediaQuery';
@@ -475,11 +475,13 @@ function HowItWorksCard() {
   if (dismissed) return null;
 
   const steps = [
-    { title: t('how_it_works.step1_title'), desc: t('how_it_works.step1_desc'), icon: '🪙' },
-    { title: t('how_it_works.step2_title'), desc: t('how_it_works.step2_desc'), icon: '🎯' },
-    { title: t('how_it_works.step3_title'), desc: t('how_it_works.step3_desc'), icon: '🏆' },
-    { title: t('how_it_works.step4_title'), desc: t('how_it_works.step4_desc'), icon: '📈' },
+    { title: t('how_it_works.step1_title'), desc: t('how_it_works.step1_desc'), icon: Coins, accent: '#FFD60A' },
+    { title: t('how_it_works.step2_title'), desc: t('how_it_works.step2_desc'), icon: Target, accent: '#00D4FF' },
+    { title: t('how_it_works.step3_title'), desc: t('how_it_works.step3_desc'), icon: Trophy, accent: '#2ED573' },
+    { title: t('how_it_works.step4_title'), desc: t('how_it_works.step4_desc'), icon: BarChart3, accent: '#E040FB' },
   ];
+
+  const dismiss = () => { setDismissed(true); localStorage.setItem('pt_hiw_dismissed', '1'); };
 
   return (
     <div style={{
@@ -488,36 +490,198 @@ function HowItWorksCard() {
     }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
         style={{
-          background: 'linear-gradient(135deg, #1C2538 0%, #141C2B 100%)',
-          border: '1px solid rgba(255,214,10,0.2)',
-          borderRadius: 16, padding: isMobile ? 18 : 24,
+          position: 'relative',
+          background: 'linear-gradient(160deg, rgba(28,37,56,0.95) 0%, rgba(11,17,32,0.98) 100%)',
+          border: '1px solid rgba(255,214,10,0.12)',
+          borderRadius: isMobile ? 18 : 22,
+          padding: isMobile ? '22px 16px 20px' : '32px 36px 28px',
+          overflow: 'hidden',
         }}
       >
-        <h3 style={{
-          fontFamily: "'Bangers', cursive", fontSize: isMobile ? 20 : 26,
-          color: '#FFD60A', margin: '0 0 16px', textAlign: 'center',
-        }}>
-          {t('how_it_works.title')}
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 12 }}>
-          {steps.map((s, i) => (
-            <div key={i} style={{
-              background: '#0B1120', borderRadius: 12, padding: isMobile ? 14 : 16,
-              textAlign: 'center',
-            }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>{s.icon}</div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: '#E2E8F0', marginBottom: 4 }}>{s.title}</div>
-              <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.4 }}>{s.desc}</div>
-            </div>
-          ))}
+        {/* Decorative glow */}
+        <div style={{
+          position: 'absolute', top: -80, right: -80,
+          width: 200, height: 200, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,214,10,0.06) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: -60, left: -60,
+          width: 160, height: 160, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(224,64,251,0.04) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Close button */}
+        <button
+          onClick={dismiss}
+          style={{
+            position: 'absolute', top: isMobile ? 12 : 16, right: isMobile ? 12 : 16,
+            width: 28, height: 28, borderRadius: 8,
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', zIndex: 2,
+          }}
+        >
+          <X size={14} color="#475569" />
+        </button>
+
+        {/* Header */}
+        <div style={{ position: 'relative', textAlign: 'center', marginBottom: isMobile ? 20 : 28 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '5px 14px', borderRadius: 20,
+            background: 'rgba(255,214,10,0.08)',
+            border: '1px solid rgba(255,214,10,0.15)',
+            marginBottom: 10,
+          }}>
+            <Sparkles size={12} color="#FFD60A" />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD60A', letterSpacing: 0.8, textTransform: 'uppercase' }}>
+              Quick Guide
+            </span>
+          </div>
+          <h3 style={{
+            fontFamily: "'Bangers', cursive",
+            fontSize: isMobile ? 24 : 32,
+            color: '#E2E8F0',
+            margin: 0, letterSpacing: 1.5,
+            textShadow: '0 2px 12px rgba(255,214,10,0.15)',
+          }}>
+            {t('how_it_works.title')}
+          </h3>
         </div>
-        <div style={{ textAlign: 'center', marginTop: 14 }}>
+
+        {/* Steps */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
+          gap: isMobile ? 0 : 0,
+          position: 'relative',
+        }}>
+          {/* Connector line (desktop only) */}
+          {!isMobile && (
+            <div style={{
+              position: 'absolute',
+              top: 28,
+              left: 'calc(12.5% + 20px)',
+              right: 'calc(12.5% + 20px)',
+              height: 2,
+              background: 'linear-gradient(90deg, rgba(255,214,10,0.3), rgba(0,212,255,0.3), rgba(46,213,115,0.3), rgba(224,64,251,0.3))',
+              borderRadius: 1,
+              zIndex: 0,
+            }} />
+          )}
+
+          {steps.map((s, i) => {
+            const Icon = s.icon;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 + i * 0.1, duration: 0.4 }}
+                style={{
+                  display: 'flex',
+                  flexDirection: isMobile ? 'row' : 'column',
+                  alignItems: isMobile ? 'flex-start' : 'center',
+                  gap: isMobile ? 14 : 0,
+                  padding: isMobile ? '14px 0' : '0 10px',
+                  position: 'relative',
+                  zIndex: 1,
+                  borderBottom: isMobile && i < 3 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                }}
+              >
+                {/* Icon circle */}
+                <div style={{
+                  width: isMobile ? 48 : 56,
+                  height: isMobile ? 48 : 56,
+                  borderRadius: isMobile ? 14 : 18,
+                  background: `linear-gradient(135deg, ${s.accent}12, ${s.accent}06)`,
+                  border: `1.5px solid ${s.accent}25`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                  marginBottom: isMobile ? 0 : 14,
+                  position: 'relative',
+                }}>
+                  <Icon size={isMobile ? 22 : 24} color={s.accent} strokeWidth={2} />
+                  {/* Step number badge */}
+                  <div style={{
+                    position: 'absolute',
+                    top: -6, right: -6,
+                    width: 20, height: 20,
+                    borderRadius: '50%',
+                    background: s.accent,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 10, fontWeight: 800, color: '#0B1120',
+                    boxShadow: `0 2px 8px ${s.accent}40`,
+                  }}>
+                    {i + 1}
+                  </div>
+                </div>
+
+                {/* Text */}
+                <div style={{ textAlign: isMobile ? 'left' : 'center', flex: 1 }}>
+                  <div style={{
+                    fontWeight: 700,
+                    fontSize: isMobile ? 14 : 13,
+                    color: '#E2E8F0',
+                    marginBottom: 4,
+                    lineHeight: 1.3,
+                  }}>
+                    {s.title.replace(/^\d+\.\s*/, '')}
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? 12 : 11.5,
+                    color: '#64748B',
+                    lineHeight: 1.5,
+                  }}>
+                    {s.desc}
+                  </div>
+                </div>
+
+                {/* Mobile connector dot */}
+                {isMobile && i < 3 && (
+                  <div style={{
+                    position: 'absolute', bottom: -3, left: 23,
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: steps[i + 1]?.accent ?? '#475569',
+                    opacity: 0.4,
+                  }} />
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* CTA */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 12, marginTop: isMobile ? 20 : 28,
+        }}>
+          <Link to="/create" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: isMobile ? '11px 24px' : '12px 28px',
+            borderRadius: 12,
+            background: 'linear-gradient(135deg, #FFD60A 0%, #F0AA00 100%)',
+            boxShadow: '0 4px 20px rgba(255,214,10,0.2)',
+            color: '#0B1120', fontWeight: 800, fontSize: isMobile ? 13 : 14,
+            textDecoration: 'none', letterSpacing: 0.3,
+            transition: 'transform 0.15s, box-shadow 0.15s',
+          }}>
+            <Zap size={15} strokeWidth={2.5} />
+            {t('predictions.create')}
+          </Link>
           <button
-            onClick={() => { setDismissed(true); localStorage.setItem('pt_hiw_dismissed', '1'); }}
+            onClick={dismiss}
             style={{
-              padding: '8px 24px', borderRadius: 8, border: 'none', cursor: 'pointer',
-              background: '#FFD60A', color: '#0B1120', fontWeight: 700, fontSize: 13,
+              padding: isMobile ? '11px 20px' : '12px 24px',
+              borderRadius: 12, cursor: 'pointer',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              color: '#64748B', fontWeight: 600, fontSize: isMobile ? 13 : 14,
+              transition: 'background 0.15s',
             }}
           >
             {t('how_it_works.got_it')}
