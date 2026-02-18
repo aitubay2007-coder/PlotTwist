@@ -297,7 +297,10 @@
     "coins": "PlotCoins",
     "coins_short": "TC",
     "share": "Share",
+    "share_text": "Pool:",
     "link_copied": "Link copied!",
+    "copy": "Copy",
+    "more": "More",
     "close": "Close",
     "confirm": "Confirm",
     "by": "by"

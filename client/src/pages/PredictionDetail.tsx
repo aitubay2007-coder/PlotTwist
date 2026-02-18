@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle, Globe, Users, Shield, ThumbsUp, ThumbsDown, Lock, Share2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle, Globe, Users, Shield, ThumbsUp, ThumbsDown, Lock, Share2, Copy, X, MessageCircle } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
@@ -23,6 +23,7 @@ export default function PredictionDetail() {
   const [disputes, setDisputes] = useState<PredictionDispute[]>([]);
   const [disputing, setDisputing] = useState(false);
   const [userHasBet, setUserHasBet] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const fetchPrediction = async () => {
@@ -230,10 +231,7 @@ export default function PredictionDetail() {
                 </span>
               )}
               <button
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast.success(t('common.link_copied'));
-                }}
+                onClick={() => setShareOpen(true)}
                 style={{
                   marginLeft: 'auto', fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
                   background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94A3B8',
@@ -502,6 +500,16 @@ export default function PredictionDetail() {
         onBetPlaced={handleBet}
       />
       <PredictionComments predictionId={prediction.id} />
+
+      {/* Share Modal */}
+      {shareOpen && (
+        <ShareModal
+          prediction={prediction}
+          onClose={() => setShareOpen(false)}
+          t={t}
+          isMobile={isMobile}
+        />
+      )}
     </div>
   );
 }
@@ -512,5 +520,222 @@ function StatBox({ label, value, color }: { label: string; value: string; color:
       <div style={{ color: '#64748B', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
       <div style={{ fontFamily: "'Bangers', cursive", fontSize: 22, color }}>{value}</div>
     </div>
+  );
+}
+
+function ShareModal({ prediction, onClose, t, isMobile }: {
+  prediction: Prediction;
+  onClose: () => void;
+  t: (k: string, opts?: Record<string, unknown>) => string;
+  isMobile: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+  const url = window.location.href;
+  const pool = prediction.total_pool ?? 0;
+  const pct = pool > 0 ? Math.round(((prediction.total_yes ?? 0) / pool) * 100) : 50;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast.success(t('common.link_copied'));
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `PlotTwist: ${prediction.title}`,
+          text: `${prediction.title} — ${t('common.share_text')} ${pool.toLocaleString()} TC`,
+          url,
+        });
+      } catch { /* user cancelled */ }
+    } else {
+      handleCopy();
+    }
+  };
+
+  const shareText = encodeURIComponent(`${prediction.title} — PlotTwist`);
+  const shareUrl = encodeURIComponent(url);
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000,
+        display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center',
+        padding: isMobile ? 0 : 24,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#141C2B',
+          border: '1px solid rgba(255,214,10,0.15)',
+          borderRadius: isMobile ? '20px 20px 0 0' : 20,
+          width: '100%',
+          maxWidth: 440,
+          overflow: 'hidden',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <span style={{ fontWeight: 700, fontSize: 16, color: '#E2E8F0' }}>
+            {t('common.share')}
+          </span>
+          <button onClick={onClose} style={{
+            background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 10,
+            width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}>
+            <X size={16} color="#94A3B8" />
+          </button>
+        </div>
+
+        {/* Preview Card */}
+        <div style={{ padding: '16px 20px' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1C2538 0%, #0F172A 100%)',
+            border: '1px solid rgba(255,214,10,0.12)',
+            borderRadius: 14, padding: 16, marginBottom: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 8,
+                background: 'linear-gradient(135deg, #FFD60A, #F0AA00)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: "'Bangers', cursive", fontSize: 14, color: '#0B1120',
+              }}>
+                PT
+              </div>
+              <span style={{ color: '#64748B', fontSize: 12, fontWeight: 600 }}>PlotTwist</span>
+              {prediction.visibility === 'private' && <Lock size={11} color="#F59E0B" />}
+            </div>
+            <h4 style={{ color: '#E2E8F0', fontSize: 15, fontWeight: 700, margin: '0 0 10px', lineHeight: 1.35 }}>
+              {prediction.title}
+            </h4>
+            <div style={{
+              height: 4, borderRadius: 2, overflow: 'hidden',
+              display: 'flex', background: '#1C2538', marginBottom: 8,
+            }}>
+              <div style={{ width: `${pct}%`, background: '#22c55e' }} />
+              <div style={{ width: `${100 - pct}%`, background: '#ef4444' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+              <span style={{ color: '#FFD60A', fontWeight: 700 }}>
+                {pool.toLocaleString()} TC
+              </span>
+              <span style={{ color: '#22c55e', fontWeight: 600 }}>{pct}% YES</span>
+            </div>
+          </div>
+
+          {/* Link box */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: '#0B1120', borderRadius: 12, padding: '10px 14px',
+            border: '1px solid rgba(255,255,255,0.06)', marginBottom: 16,
+          }}>
+            <span style={{
+              flex: 1, fontSize: 13, color: '#64748B',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {url}
+            </span>
+            <button
+              onClick={handleCopy}
+              style={{
+                background: copied ? '#22c55e' : '#FFD60A', border: 'none', borderRadius: 8,
+                padding: '6px 12px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 4,
+                fontWeight: 700, fontSize: 12, color: '#0B1120',
+                transition: 'background 0.2s',
+                flexShrink: 0,
+              }}
+            >
+              <Copy size={13} />
+              {copied ? '✓' : t('common.copy')}
+            </button>
+          </div>
+
+          {/* Share buttons */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+            <ShareBtn
+              label="WhatsApp"
+              color="#25D366"
+              href={`https://wa.me/?text=${shareText}%20${shareUrl}`}
+              icon={<MessageCircle size={20} />}
+            />
+            <ShareBtn
+              label="Telegram"
+              color="#26A5E4"
+              href={`https://t.me/share/url?url=${shareUrl}&text=${shareText}`}
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.98 1.26-5.59 3.7-.53.36-1.01.54-1.43.53-.47-.01-1.38-.27-2.05-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.65-2.89 7.99-3.44 3.81-1.58 4.6-1.86 5.12-1.87.11 0 .37.03.53.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>}
+            />
+            <ShareBtn
+              label="X"
+              color="#fff"
+              href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`}
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>}
+            />
+            {typeof navigator.share === 'function' && (
+              <button
+                onClick={handleNativeShare}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: 6, padding: '12px 4px', borderRadius: 12, cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                  transition: 'background 0.2s',
+                }}
+              >
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  background: 'rgba(148,163,184,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Share2 size={20} color="#94A3B8" />
+                </div>
+                <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600 }}>{t('common.more')}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Pull indicator on mobile */}
+        {isMobile && (
+          <div style={{ height: 20, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.1)' }} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ShareBtn({ label, color, href, icon }: { label: string; color: string; href: string; icon: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 6, padding: '12px 4px', borderRadius: 12, textDecoration: 'none',
+        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+        transition: 'background 0.2s',
+      }}
+    >
+      <div style={{
+        width: 40, height: 40, borderRadius: 12,
+        background: `${color}20`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color,
+      }}>
+        {icon}
+      </div>
+      <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600 }}>{label}</span>
+    </a>
   );
 }

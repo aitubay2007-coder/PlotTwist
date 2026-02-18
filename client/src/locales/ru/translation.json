@@ -297,7 +297,10 @@
     "coins": "PlotCoins",
     "coins_short": "TC",
     "share": "Поделиться",
+    "share_text": "Пул:",
     "link_copied": "Ссылка скопирована!",
+    "copy": "Копировать",
+    "more": "Ещё",
     "close": "Закрыть",
     "confirm": "Подтвердить",
     "by": "от"
