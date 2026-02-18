@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Search, TrendingUp, Clock, Sparkles, Flame, Zap, Users, Swords } from 'lucide-react';
+import { Search, TrendingUp, Clock, Sparkles, Flame, Zap } from 'lucide-react';
 import { supabase, withTimeout } from '../lib/supabase';
 import type { Prediction } from '../types';
 import { useIsMobile, useIsTablet } from '../hooks/useMediaQuery';
@@ -15,7 +15,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<Sort>('trending');
   const [search, setSearch] = useState('');
-  const [modeFilter, setModeFilter] = useState<'all' | 'official' | 'unofficial'>('all');
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
 
@@ -25,9 +24,10 @@ export default function Dashboard() {
       try {
         let query = supabase
           .from('predictions')
-          .select('*, shows(title, poster_url, category), profiles(username, avatar_url)')
+          .select('*, profiles(username, avatar_url)')
           .eq('status', 'active')
-          .limit(20);
+          .eq('visibility', 'public')
+          .limit(30);
 
         if (sort === 'trending') query = query.order('total_pool', { ascending: false });
         else if (sort === 'newest') query = query.order('created_at', { ascending: false });
@@ -49,11 +49,9 @@ export default function Dashboard() {
     })();
   }, [sort]);
 
-  const filtered = predictions.filter(p => {
-    const matchSearch = (p.title ?? '').toLowerCase().includes(search.toLowerCase());
-    const matchMode = modeFilter === 'all' || (p.mode ?? 'official') === modeFilter;
-    return matchSearch && matchMode;
-  });
+  const filtered = predictions.filter(p =>
+    (p.title ?? '').toLowerCase().includes(search.toLowerCase())
+  );
   const featured = filtered.slice(0, 2);
   const rest = filtered.slice(2);
 
@@ -66,19 +64,15 @@ export default function Dashboard() {
         background: 'linear-gradient(135deg, #1a0f00 0%, #3d2200 30%, #5a3300 60%, #2a1500 100%)',
         minHeight: isMobile ? 140 : 220,
       }}>
-        {/* Halftone dots */}
         <div style={{
           position: 'absolute', inset: 0, opacity: 0.15,
           backgroundImage: 'radial-gradient(circle, #FFD60A 1px, transparent 1px)',
           backgroundSize: isMobile ? '6px 6px' : '8px 8px',
         }} />
-        {/* Bottom fade */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
           background: 'linear-gradient(to top, #0B1120, transparent)',
         }} />
-
-        {/* Hero image — hidden on mobile */}
         {!isMobile && (
           <img
             src="/images/banner-hero.png"
@@ -93,8 +87,6 @@ export default function Dashboard() {
             }}
           />
         )}
-
-        {/* Content */}
         <div style={{
           position: 'relative', zIndex: 2, textAlign: 'center',
           padding: isMobile ? '28px 16px 20px' : '50px 24px 40px',
@@ -119,7 +111,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* =========== HOW IT WORKS =========== */}
       <HowItWorksCard />
 
       {/* =========== MAIN CONTENT =========== */}
@@ -128,7 +119,7 @@ export default function Dashboard() {
         padding: isMobile ? '16px 16px 24px' : '32px 24px 60px',
       }}>
 
-        {/* ---- Quick Actions (horizontal scroll on mobile) ---- */}
+        {/* Quick Actions (mobile) */}
         {isMobile && (
           <div style={{
             display: 'flex', gap: 8, marginBottom: 20,
@@ -137,13 +128,11 @@ export default function Dashboard() {
             scrollbarWidth: 'none',
           }}>
             <QuickAction to="/create" icon={<Zap size={14} />} label={t('predictions.create')} primary />
-            <QuickAction to="/clans?action=create" icon={<Users size={14} />} label={t('clans.create')} />
-            <QuickAction to="/challenges" icon={<Swords size={14} />} label={t('challenges.send')} />
             <QuickAction to="/leaderboard" icon={<Flame size={14} />} label={t('nav.leaderboard')} />
           </div>
         )}
 
-        {/* ---- Featured + Sidebar (desktop) ---- */}
+        {/* Featured + Sidebar */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : '1fr 1fr 220px',
@@ -167,18 +156,15 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Desktop Sidebar */}
           {!isMobile && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <SideBtn to="/create" icon={<Zap size={16} />} label={t('predictions.create')} primary />
-              <SideBtn to="/clans?action=create" icon={<Users size={16} />} label={t('clans.create')} />
-              <SideBtn to="/challenges" icon={<Swords size={16} />} label={t('challenges.send')} />
               <SideBtn to="/leaderboard" icon={<Flame size={16} />} label={t('nav.leaderboard')} />
             </div>
           )}
         </div>
 
-        {/* ---- PREDICTION CARDS Section ---- */}
+        {/* PREDICTION CARDS Section */}
         <div style={{ marginBottom: isMobile ? 16 : 48 }}>
           <h2 style={{
             fontFamily: "'Bangers', cursive",
@@ -191,7 +177,7 @@ export default function Dashboard() {
             {t('predictions.prediction_cards')}
           </h2>
 
-          {/* Filters row */}
+          {/* Sort filters */}
           <div style={{
             display: 'flex', flexWrap: isMobile ? 'nowrap' : 'wrap',
             alignItems: 'center', gap: isMobile ? 6 : 10,
@@ -221,30 +207,8 @@ export default function Dashboard() {
               </button>
             ))}
 
-            {/* Mode filter pills */}
-            <div style={{ width: 1, height: 20, background: '#243044', flexShrink: 0 }} />
-            {(['all', 'official', 'unofficial'] as const).map(m => (
-              <button key={m} onClick={() => setModeFilter(m)} style={{
-                padding: isMobile ? '7px 12px' : '8px 16px',
-                borderRadius: 20,
-                border: modeFilter === m ? 'none' : '1px solid #243044',
-                cursor: 'pointer',
-                fontSize: isMobile ? 12 : 13,
-                fontWeight: 700,
-                transition: 'all 0.2s',
-                background: modeFilter === m
-                  ? (m === 'unofficial' ? '#E040FB' : m === 'official' ? '#00D4FF' : '#FFD60A')
-                  : '#141C2B',
-                color: modeFilter === m ? '#0B1120' : '#94A3B8',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}>
-                {t(`predictions.filter_${m}`)}
-              </button>
-            ))}
-
             {!isMobile && (
-              <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: 200, marginLeft: 8 }}>
                 <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
                 <input
                   value={search}
@@ -271,7 +235,7 @@ export default function Dashboard() {
                 style={{
                   width: '100%', padding: '10px 14px 10px 36px', borderRadius: 12, fontSize: 14,
                   background: '#141C2B', border: '1px solid #1C2538', color: '#E2E8F0',
-                  outline: 'none',
+                  outline: 'none', boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -359,17 +323,6 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
       }}>
         <div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-            {prediction.shows && (
-              <span style={{
-                display: 'inline-block',
-                fontSize: isMobile ? 9 : 10, fontWeight: 800, textTransform: 'uppercase',
-                background: '#FFD60A', color: '#1a1a00',
-                padding: '3px 10px', borderRadius: 4,
-                letterSpacing: 1,
-              }}>
-                {prediction.shows?.category}
-              </span>
-            )}
             <span style={{
               display: 'inline-block',
               fontSize: isMobile ? 9 : 10, fontWeight: 700,
@@ -388,11 +341,10 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
             {prediction.title}
           </h3>
           <p style={{ fontSize: isMobile ? 11 : 12, color: '#888', margin: '0 0 12px' }}>
-            {prediction.shows?.title} {prediction.profiles?.username && `· @${prediction.profiles.username}`}
+            {prediction.profiles?.username && `@${prediction.profiles.username}`}
           </p>
         </div>
 
-        {/* Bar */}
         <div>
           <div style={{
             height: 6, borderRadius: 3, overflow: 'hidden',
@@ -412,20 +364,18 @@ function FeaturedCard({ prediction, isMobile }: { prediction: Prediction; isMobi
             <span style={{ color: '#999' }}>{timeLeft(prediction.deadline)}</span>
           </div>
 
-          <span
-            style={{
-              display: 'block', width: '100%',
-              padding: isMobile ? '10px 0' : '12px 0',
-              borderRadius: 10,
-              border: '2px solid #b8860b',
-              background: '#FFD60A', color: '#000',
-              fontWeight: 800,
-              fontSize: isMobile ? 14 : 15,
-              cursor: 'pointer', letterSpacing: 1,
-              fontFamily: "'Bangers', cursive",
-              textAlign: 'center',
-            }}
-          >
+          <span style={{
+            display: 'block', width: '100%',
+            padding: isMobile ? '10px 0' : '12px 0',
+            borderRadius: 10,
+            border: '2px solid #b8860b',
+            background: '#FFD60A', color: '#000',
+            fontWeight: 800,
+            fontSize: isMobile ? 14 : 15,
+            cursor: 'pointer', letterSpacing: 1,
+            fontFamily: "'Bangers', cursive",
+            textAlign: 'center',
+          }}>
             {t('predictions.place_bet')}
           </span>
         </div>
@@ -450,40 +400,37 @@ function PredCard({ prediction, isMobile }: { prediction: Prediction; isMobile: 
         display: 'flex', flexDirection: 'column',
         transition: 'transform 0.2s, border-color 0.2s',
       }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ flex: 1 }}>
-            {prediction.shows && (
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ flex: 1 }}>
               <span style={{
                 display: 'inline-block',
-                fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
-                background: 'rgba(255,214,10,0.12)', color: '#FFD60A',
+                fontSize: 9, fontWeight: 700,
                 padding: '2px 8px', borderRadius: 4,
-                marginBottom: 8, letterSpacing: 0.5,
+                marginBottom: 8,
+                background: (prediction.mode ?? 'official') === 'unofficial' ? 'rgba(224,64,251,0.12)' : 'rgba(0,212,255,0.1)',
+                color: (prediction.mode ?? 'official') === 'unofficial' ? '#E040FB' : '#00D4FF',
               }}>
-                {prediction.shows.category}
+                {(prediction.mode ?? 'official') === 'unofficial' ? t('predictions.unofficial_badge') : t('predictions.official_badge')}
               </span>
-            )}
-            <h4 style={{
-              fontSize: isMobile ? 14 : 14, fontWeight: 600,
-              color: '#E2E8F0', lineHeight: 1.4, margin: '0 0 4px',
+              <h4 style={{
+                fontSize: isMobile ? 14 : 14, fontWeight: 600,
+                color: '#E2E8F0', lineHeight: 1.4, margin: '0 0 4px',
+              }}>
+                {prediction.title}
+              </h4>
+            </div>
+            <div style={{
+              flexShrink: 0,
+              width: 40, height: 40,
+              borderRadius: 10,
+              background: pct >= 50 ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 800,
+              color: pct >= 50 ? '#22c55e' : '#ef4444',
             }}>
-              {prediction.title}
-            </h4>
-            <p style={{ fontSize: 11, color: '#64748B', margin: '0 0 10px' }}>
-              {prediction.shows?.title}
-            </p>
-          </div>
-          {/* Percentage badge */}
-          <div style={{
-            flexShrink: 0,
-            width: 40, height: 40,
-            borderRadius: 10,
-            background: pct >= 50 ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 800,
-            color: pct >= 50 ? '#22c55e' : '#ef4444',
-          }}>
-            {pct}%
+              {pct}%
+            </div>
           </div>
         </div>
 
@@ -596,10 +543,10 @@ const d = (days: number) => new Date(Date.now() + days * 86400000).toISOString()
 const now = new Date().toISOString();
 
 const DEMO: Prediction[] = [
-  { id:'1', title:'Luffy will find the One Piece by end of 2026', description:null, show_id:'1', creator_id:'1', mode:'official', status:'active', deadline:d(30), resolved_at:null, disputed:false, total_yes:15000, total_no:8000, total_pool:23000, created_at:now, shows:{title:'One Piece',poster_url:null,category:'anime'}, profiles:{username:'NakamaCrew',avatar_url:null} },
-  { id:'2', title:'Squid Game S3 protagonist dies in the finale', description:null, show_id:'2', creator_id:'2', mode:'official', status:'active', deadline:d(14), resolved_at:null, disputed:false, total_yes:12000, total_no:18000, total_pool:30000, created_at:now, shows:{title:'Squid Game',poster_url:null,category:'series'}, profiles:{username:'KDramaKing',avatar_url:null} },
-  { id:'3', title:'Vegapunk will survive the Egghead arc', description:null, show_id:'1', creator_id:'3', mode:'unofficial', status:'active', deadline:d(7), resolved_at:null, disputed:false, total_yes:5000, total_no:20000, total_pool:25000, created_at:now, shows:{title:'One Piece',poster_url:null,category:'anime'}, profiles:{username:'GrandLineGuru',avatar_url:null} },
-  { id:'4', title:'Kanye West will release Bully this year', description:null, show_id:'4', creator_id:'4', mode:'official', status:'active', deadline:d(60), resolved_at:null, disputed:false, total_yes:3000, total_no:22000, total_pool:25000, created_at:now, shows:{title:'Music',poster_url:null,category:'music'}, profiles:{username:'YeezyFan',avatar_url:null} },
-  { id:'5', title:'Jon Snow spin-off announced at Comic-Con', description:null, show_id:'5', creator_id:'5', mode:'unofficial', status:'active', deadline:d(120), resolved_at:null, disputed:false, total_yes:9000, total_no:6000, total_pool:15000, created_at:now, shows:{title:'Game of Thrones',poster_url:null,category:'series'}, profiles:{username:'WinterIsComing',avatar_url:null} },
-  { id:'6', title:'Islam Makhachev defends title at UFC 310', description:null, show_id:'6', creator_id:'6', mode:'official', status:'active', deadline:d(45), resolved_at:null, disputed:false, total_yes:25000, total_no:10000, total_pool:35000, created_at:now, shows:{title:'UFC',poster_url:null,category:'sport'}, profiles:{username:'MMAExpert',avatar_url:null} },
+  { id:'1', title:'Luffy will find the One Piece by end of 2026', description:null, show_id:null, creator_id:'1', mode:'official', visibility:'public', status:'active', deadline:d(30), resolved_at:null, disputed:false, total_yes:15000, total_no:8000, total_pool:23000, created_at:now, profiles:{username:'NakamaCrew',avatar_url:null} },
+  { id:'2', title:'Squid Game S3 protagonist dies in the finale', description:null, show_id:null, creator_id:'2', mode:'official', visibility:'public', status:'active', deadline:d(14), resolved_at:null, disputed:false, total_yes:12000, total_no:18000, total_pool:30000, created_at:now, profiles:{username:'KDramaKing',avatar_url:null} },
+  { id:'3', title:'Vegapunk will survive the Egghead arc', description:null, show_id:null, creator_id:'3', mode:'unofficial', visibility:'public', status:'active', deadline:d(7), resolved_at:null, disputed:false, total_yes:5000, total_no:20000, total_pool:25000, created_at:now, profiles:{username:'GrandLineGuru',avatar_url:null} },
+  { id:'4', title:'Kanye West will release Bully this year', description:null, show_id:null, creator_id:'4', mode:'official', visibility:'public', status:'active', deadline:d(60), resolved_at:null, disputed:false, total_yes:3000, total_no:22000, total_pool:25000, created_at:now, profiles:{username:'YeezyFan',avatar_url:null} },
+  { id:'5', title:'Jon Snow spin-off announced at Comic-Con', description:null, show_id:null, creator_id:'5', mode:'unofficial', visibility:'public', status:'active', deadline:d(120), resolved_at:null, disputed:false, total_yes:9000, total_no:6000, total_pool:15000, created_at:now, profiles:{username:'WinterIsComing',avatar_url:null} },
+  { id:'6', title:'Islam Makhachev defends title at UFC 310', description:null, show_id:null, creator_id:'6', mode:'official', visibility:'public', status:'active', deadline:d(45), resolved_at:null, disputed:false, total_yes:25000, total_no:10000, total_pool:35000, created_at:now, profiles:{username:'MMAExpert',avatar_url:null} },
 ];

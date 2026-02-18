@@ -1,14 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Home, Users, PlusCircle, Swords, User } from 'lucide-react';
+import { Home, Trophy, PlusCircle, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
 const TABS = [
   { to: '/', icon: Home, label: 'nav.home' },
-  { to: '/clans', icon: Users, label: 'nav.clans' },
+  { to: '/leaderboard', icon: Trophy, label: 'nav.leaderboard' },
   { to: '/create', icon: PlusCircle, label: 'predictions.create', center: true },
-  { to: '/challenges', icon: Swords, label: 'nav.challenges' },
   { to: '/profile', icon: User, label: 'nav.profile' },
 ] as const;
 

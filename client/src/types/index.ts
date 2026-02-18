@@ -24,9 +24,10 @@ export interface Prediction {
   id: string;
   title: string;
   description: string | null;
-  show_id: string;
+  show_id: string | null;
   creator_id: string;
   mode: 'official' | 'unofficial';
+  visibility: 'public' | 'private';
   status: 'active' | 'resolved_yes' | 'resolved_no' | 'cancelled';
   deadline: string;
   resolved_at: string | null;
@@ -35,7 +36,7 @@ export interface Prediction {
   total_no: number;
   total_pool: number;
   created_at: string;
-  shows?: Pick<Show, 'title' | 'poster_url' | 'category'>;
+  shows?: Pick<Show, 'title' | 'poster_url' | 'category'> | null;
   profiles?: Pick<Profile, 'username' | 'avatar_url'>;
   bets?: Bet[];
 }
@@ -57,77 +58,6 @@ export interface Bet {
   amount: number;
   created_at: string;
   profiles?: Pick<Profile, 'username' | 'avatar_url'>;
-}
-
-export interface Clan {
-  id: string;
-  name: string;
-  description: string | null;
-  creator_id: string;
-  invite_code: string;
-  avatar_url: string | null;
-  xp: number;
-  level: number;
-  created_at: string;
-  profiles?: Pick<Profile, 'username' | 'avatar_url'>;
-  clan_members?: ClanMember[];
-}
-
-export interface ClanLeaderboardEntry {
-  id: string;
-  name: string;
-  description: string | null;
-  xp: number;
-  level: number;
-  created_at: string;
-  member_count: number;
-  total_reputation: number;
-  total_coins: number;
-}
-
-export const CLAN_LEVELS = [
-  { level: 1, xp: 0, title: 'Rookie', color: '#CD7F32' },
-  { level: 2, xp: 500, title: 'Rising', color: '#C0C0C0' },
-  { level: 3, xp: 2000, title: 'Veteran', color: '#FFD60A' },
-  { level: 4, xp: 5000, title: 'Elite', color: '#00D4FF' },
-  { level: 5, xp: 15000, title: 'Legendary', color: '#E040FB' },
-] as const;
-
-export function getClanLevel(level: number) {
-  return CLAN_LEVELS.find(l => l.level === level) || CLAN_LEVELS[0];
-}
-
-export function getNextLevelXP(level: number): number {
-  const next = CLAN_LEVELS.find(l => l.level === level + 1);
-  return next ? next.xp : CLAN_LEVELS[CLAN_LEVELS.length - 1].xp;
-}
-
-export function getCurrentLevelXP(level: number): number {
-  const current = CLAN_LEVELS.find(l => l.level === level);
-  return current ? current.xp : 0;
-}
-
-export interface ClanMember {
-  clan_id: string;
-  user_id: string;
-  role: 'admin' | 'member';
-  joined_at: string;
-  profiles?: Pick<Profile, 'username' | 'avatar_url' | 'coins' | 'reputation'>;
-}
-
-export interface Challenge {
-  id: string;
-  challenger_id: string;
-  challenged_id: string;
-  prediction_id: string;
-  challenger_position: 'yes' | 'no';
-  challenged_position: 'yes' | 'no';
-  amount: number;
-  status: 'pending' | 'accepted' | 'declined' | 'resolved';
-  created_at: string;
-  predictions?: Pick<Prediction, 'title'>;
-  challenger?: Pick<Profile, 'username' | 'avatar_url'>;
-  challenged?: Pick<Profile, 'username' | 'avatar_url'>;
 }
 
 export interface Transaction {

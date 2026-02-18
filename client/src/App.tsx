@@ -9,9 +9,6 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import PredictionDetail from './pages/PredictionDetail';
 import CreatePrediction from './pages/CreatePrediction';
-import Clans from './pages/Clans';
-import ClanDetail from './pages/ClanDetail';
-import Challenges from './pages/Challenges';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import Transactions from './pages/Transactions';
@@ -60,9 +57,6 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/prediction/:id" element={<PredictionDetail />} />
           <Route path="/create" element={<CreatePrediction />} />
-          <Route path="/clans" element={<Clans />} />
-          <Route path="/clan/:id" element={<ClanDetail />} />
-          <Route path="/challenges" element={<Challenges />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/transactions" element={<Transactions />} />

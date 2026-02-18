@@ -8,8 +8,6 @@ import NotificationBell from './NotificationBell';
 
 const NAV = [
   { to: '/', label: 'nav.home' },
-  { to: '/clans', label: 'nav.clans' },
-  { to: '/challenges', label: 'nav.challenges' },
   { to: '/leaderboard', label: 'nav.leaderboard' },
 ] as const;
 

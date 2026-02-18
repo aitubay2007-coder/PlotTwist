@@ -115,7 +115,11 @@
     "mode_official": "Official",
     "mode_unofficial": "Between Friends",
     "mode_official_desc": "Verifiable facts — admins determine the result",
-    "mode_unofficial_desc": "Personal bets — creator resolves, participants can dispute"
+    "mode_unofficial_desc": "Personal bets — creator resolves, participants can dispute",
+    "visibility_label": "Visibility",
+    "visibility_public": "Public",
+    "visibility_private": "Private",
+    "private_notice": "Private predictions are only visible to people with a direct link. They won't appear in the public feed."
   },
   "clans": {
     "title": "Your Clans",
@@ -347,7 +351,7 @@
     "step3_title": "3. Win Coins from the Pool",
     "step3_desc": "When a prediction resolves, winners split the entire pool proportionally to their bets.",
     "step4_title": "4. Climb the Leaderboard",
-    "step4_desc": "Earn reputation, join clans, and prove you're the ultimate prediction expert!",
+    "step4_desc": "Earn coins, climb the global leaderboard and prove you're the ultimate prediction expert!",
     "got_it": "Got It!",
     "dismiss": "Don't show again"
   },

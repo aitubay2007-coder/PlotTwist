@@ -8,28 +8,12 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
-const COUNTRIES = [
-  { code: 'KZ', label: 'Kazakhstan' },
-  { code: 'US', label: 'United States' },
-  { code: 'RU', label: 'Russia' },
-  { code: 'JP', label: 'Japan' },
-  { code: 'KR', label: 'South Korea' },
-  { code: 'TR', label: 'Turkey' },
-  { code: 'DE', label: 'Germany' },
-  { code: 'BR', label: 'Brazil' },
-  { code: 'GB', label: 'United Kingdom' },
-  { code: 'FR', label: 'France' },
-  { code: 'CN', label: 'China' },
-  { code: 'IN', label: 'India' },
-];
-
 export default function Profile() {
   const { t } = useTranslation();
   const { user, isAuthenticated, fetchProfile, setShowLogoutConfirm, adjustCoins } = useAuthStore();
   const [claimingBonus, setClaimingBonus] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
-  const [editCountry, setEditCountry] = useState('');
   const [saving, setSaving] = useState(false);
   const [myPredictions, setMyPredictions] = useState<{ id: string; title: string; status: string }[]>([]);
   const [myBets, setMyBets] = useState<{ id: string; prediction_id: string; position: string; amount: number; predictions: { title: string; status: string } | null }[]>([]);
@@ -99,7 +83,6 @@ export default function Profile() {
 
   const openEdit = () => {
     setEditName(user?.display_name || '');
-    setEditCountry(user?.country || '');
     setEditOpen(true);
   };
 
@@ -109,7 +92,7 @@ export default function Profile() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ display_name: editName || null, country: editCountry || null })
+        .update({ display_name: editName || null })
         .eq('id', user.id);
       if (error) throw error;
       await fetchProfile();
@@ -157,7 +140,6 @@ export default function Profile() {
                 @{user.username}
               </h1>
               {user.display_name && <p style={{ color: '#E2E8F0', fontSize: 18, marginTop: 4 }}>{user.display_name}</p>}
-              {user.country && <p style={{ color: '#64748B', fontSize: 14, marginTop: 4 }}>{COUNTRIES.find(c => c.code === user.country)?.label || user.country}</p>}
               <p style={{ color: '#64748B', fontSize: 14, marginTop: 4 }}>
                 {t('profile.joined')} {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
               </p>
@@ -353,23 +335,6 @@ export default function Profile() {
                     color: '#E2E8F0', fontSize: 15, outline: 'none', boxSizing: 'border-box',
                   }}
                 />
-              </div>
-              <div>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-                  {t('profile.country_label')}
-                </label>
-                <select
-                  value={editCountry}
-                  onChange={e => setEditCountry(e.target.value)}
-                  style={{
-                    width: '100%', padding: '12px 16px', borderRadius: 10,
-                    background: '#0B1120', border: '1px solid rgba(255,214,10,0.2)',
-                    color: '#E2E8F0', fontSize: 15, outline: 'none', boxSizing: 'border-box',
-                  }}
-                >
-                  <option value="">{t('profile.select_country')}</option>
-                  {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-                </select>
               </div>
               <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
                 <button

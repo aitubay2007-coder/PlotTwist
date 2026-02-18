@@ -2,15 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Swords, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle, Globe, Users, Shield, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ArrowLeft, TrendingUp, CheckCircle, XCircle, Trophy, AlertTriangle, Globe, Users, Shield, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import BetModal from '../components/BetModal';
-import ChallengeModal from '../components/ChallengeModal';
 import PredictionComments from '../components/PredictionComments';
 import type { Prediction, PredictionDispute } from '../types';
-import { awardClanXP } from '../lib/clanXP';
 import toast from 'react-hot-toast';
 
 export default function PredictionDetail() {
@@ -20,7 +18,6 @@ export default function PredictionDetail() {
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [loading, setLoading] = useState(true);
   const [betOpen, setBetOpen] = useState(false);
-  const [challengeOpen, setChallengeOpen] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [showResolveConfirm, setShowResolveConfirm] = useState<'yes' | 'no' | null>(null);
   const [disputes, setDisputes] = useState<PredictionDispute[]>([]);
@@ -34,7 +31,7 @@ export default function PredictionDetail() {
     try {
       const { data, error } = await withTimeout(supabase
         .from('predictions')
-        .select('*, shows(title, poster_url, category), profiles(username, avatar_url)')
+        .select('*, profiles(username, avatar_url)')
         .eq('id', id)
         .single(), 8000);
 
@@ -103,9 +100,6 @@ export default function PredictionDetail() {
 
       // Instantly update coins in UI
       adjustCoins(-amount);
-
-      // Award clan XP (+5) for placing a bet
-      awardClanXP(user.id, 5);
 
       toast.success(t('predictions.bet_placed', { position: position.toUpperCase(), amount }));
 
@@ -221,11 +215,6 @@ export default function PredictionDetail() {
           {/* Header */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-              {prediction.shows && (
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', background: 'rgba(255,214,10,0.15)', color: '#FFD60A', padding: '4px 12px', borderRadius: 20 }}>
-                  {prediction.shows.category} — {prediction.shows.title}
-                </span>
-              )}
               {(prediction.mode ?? 'official') === 'unofficial' ? (
                 <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: 'rgba(224,64,251,0.15)', color: '#E040FB', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <Users size={12} /> {t('predictions.unofficial')}
@@ -468,22 +457,13 @@ export default function PredictionDetail() {
 
           {/* Actions */}
           {isActive && isAuthenticated && (
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 12 }}>
-              <button onClick={() => setBetOpen(true)} style={{
-                flex: 1, padding: '16px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: '#FFD60A', color: '#0B1120', fontWeight: 700, fontSize: 16,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}>
-                <TrendingUp size={18} /> {t('predictions.place_bet')}
-              </button>
-              <button onClick={() => setChallengeOpen(true)} style={{
-                flex: 1, padding: '16px 0', borderRadius: 12, cursor: 'pointer',
-                background: 'transparent', border: '2px solid #FFD60A', color: '#FFD60A', fontWeight: 700, fontSize: 16,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}>
-                <Swords size={18} /> {t('challenges.send')}
-              </button>
-            </div>
+            <button onClick={() => setBetOpen(true)} style={{
+              width: '100%', padding: '16px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
+              background: '#FFD60A', color: '#0B1120', fontWeight: 700, fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+              <TrendingUp size={18} /> {t('predictions.place_bet')}
+            </button>
           )}
           {isActive && !isAuthenticated && (
             <Link to="/login" style={{
@@ -503,80 +483,6 @@ export default function PredictionDetail() {
         prediction={prediction}
         onBetPlaced={handleBet}
       />
-      <ChallengeModal
-        isOpen={challengeOpen}
-        onClose={() => setChallengeOpen(false)}
-        predictionId={prediction.id}
-        onChallengeSent={async (params) => {
-          if (!user) return;
-          try {
-            // Look up opponent by username
-            const { data: opponent, error: lookupErr } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('username', params.opponentUsername)
-              .single();
-            if (lookupErr || !opponent) {
-              toast.error(t('challenges.user_not_found'));
-              return;
-            }
-            if (opponent.id === user.id) {
-              toast.error(t('challenges.cant_challenge_self'));
-              return;
-            }
-
-            // Check balance client-side
-            if (params.amount > user.coins) {
-              toast.error(t('predictions.insufficient_coins'));
-              return;
-            }
-
-            // Deduct coins FIRST (atomic, will fail if insufficient)
-            const { error: deductErr } = await supabase.rpc('increment_coins', {
-              user_id_param: user.id,
-              amount_param: -params.amount,
-            });
-            if (deductErr) {
-              toast.error(t('predictions.insufficient_coins'));
-              return;
-            }
-
-            // Insert challenge (coins already deducted)
-            const { error: insertErr } = await supabase.from('challenges').insert({
-              challenger_id: user.id,
-              challenged_id: opponent.id,
-              prediction_id: params.predictionId,
-              challenger_position: params.position,
-              challenged_position: params.position === 'yes' ? 'no' : 'yes',
-              amount: params.amount,
-              status: 'pending',
-            });
-            if (insertErr) {
-              // Refund coins if insert failed
-              await supabase.rpc('increment_coins', {
-                user_id_param: user.id,
-                amount_param: params.amount,
-              });
-              throw insertErr;
-            }
-
-            // Log transaction
-            await supabase.from('transactions').insert({
-              user_id: user.id,
-              type: 'challenge_sent',
-              amount: params.amount,
-              description: 'Challenge sent',
-            });
-
-            adjustCoins(-params.amount);
-            toast.success(t('challenges.sent_success'));
-            setChallengeOpen(false);
-          } catch {
-            toast.error(t('challenges.failed'));
-          }
-        }}
-      />
-
       <PredictionComments predictionId={prediction.id} />
     </div>
   );
