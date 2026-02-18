@@ -15,7 +15,8 @@ export default function CreatePrediction() {
   const [description, setDescription] = useState('');
   const [mode, setMode] = useState<'official' | 'unofficial'>('official');
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
-  const [deadline, setDeadline] = useState('');
+  const [deadlineDate, setDeadlineDate] = useState('');
+  const [deadlineTime, setDeadlineTime] = useState('23:59');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -29,12 +30,12 @@ export default function CreatePrediction() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !deadline || !user) {
+    if (!title || !deadlineDate || !user) {
       toast.error(t('create.fill_required'));
       return;
     }
-    const deadlineDate = new Date(deadline);
-    if (isNaN(deadlineDate.getTime())) {
+    const combined = new Date(`${deadlineDate}T${deadlineTime || '23:59'}`);
+    if (isNaN(combined.getTime())) {
       toast.error(t('create.fill_required'));
       return;
     }
@@ -46,7 +47,7 @@ export default function CreatePrediction() {
         creator_id: user.id,
         mode,
         visibility,
-        deadline: deadlineDate.toISOString(),
+        deadline: combined.toISOString(),
       });
       if (error) throw error;
       toast.success(t('create.success'));
@@ -185,10 +186,16 @@ export default function CreatePrediction() {
           {/* Deadline */}
           <div>
             <Label>{t('create.deadline_label')} *</Label>
-            <input
-              type="date" value={deadline} onChange={e => setDeadline(e.target.value)}
-              min={minDate} required style={inputStyle}
-            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <input
+                type="date" value={deadlineDate} onChange={e => setDeadlineDate(e.target.value)}
+                min={minDate} required style={inputStyle}
+              />
+              <input
+                type="time" value={deadlineTime} onChange={e => setDeadlineTime(e.target.value)}
+                required style={inputStyle}
+              />
+            </div>
           </div>
 
           {/* Submit */}
