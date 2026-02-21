@@ -54,7 +54,6 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/prediction/:id" element={<PredictionDetail />} />
           <Route path="/create" element={<CreatePrediction />} />
           <Route path="/leaderboard" element={<Leaderboard />} />

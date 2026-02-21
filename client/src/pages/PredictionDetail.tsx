@@ -76,11 +76,10 @@ export default function PredictionDetail() {
     // Client-side balance check
     if (amount > user.coins) {
       toast.error(t('predictions.insufficient_coins'));
-      return;
+      throw new Error('insufficient_coins');
     }
 
     try {
-      // Atomic bet placement (checks balance server-side, deducts coins, inserts bet, updates pool)
       const { data, error } = await supabase.rpc('place_bet', {
         user_id_param: user.id,
         prediction_id_param: prediction.id,
@@ -92,11 +91,11 @@ export default function PredictionDetail() {
       const result = data as { success?: boolean; error?: string; max?: number; current?: number };
       if (result.error === 'creator_bet_limit') {
         toast.error(t('predictions.creator_bet_limit', { max: result.max ?? 200, current: result.current ?? 0 }));
-        return;
+        throw new Error(result.error);
       }
       if (result.error) {
         toast.error(result.error);
-        return;
+        throw new Error(result.error);
       }
 
       // Instantly update coins in UI
@@ -205,7 +204,7 @@ export default function PredictionDetail() {
   const isActive = prediction.status === 'active' && !isExpired;
 
   return (
-    <div style={{ maxWidth: 1120, margin: '0 auto', padding: '32px 24px' }}>
+    <div style={{ maxWidth: 1120, margin: '0 auto', padding: isMobile ? '16px 16px' : '32px 24px' }}>
       <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#64748B', textDecoration: 'none', marginBottom: 24 }}>
         <ArrowLeft size={16} /> {t('common.back')}
       </Link>

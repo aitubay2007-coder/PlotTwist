@@ -1,18 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-
-interface Profile {
-  id: string;
-  username: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  coins: number;
-  reputation: number;
-  country: string | null;
-  last_daily_bonus: string | null;
-  is_admin: boolean;
-  created_at: string;
-}
+import type { Profile } from '../types';
 
 // Error codes that UI will map to i18n keys
 export type AuthErrorCode =
@@ -83,11 +71,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+    supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_IN') await get().fetchProfile();
       else if (event === 'SIGNED_OUT') set({ user: null, isAuthenticated: false });
     });
-    set({ _authSubscription: subscription } as Partial<ReturnType<typeof get>>);
   },
 
   login: async (email, password) => {

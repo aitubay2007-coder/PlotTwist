@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 export default function CreatePrediction() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [mode, setMode] = useState<'official' | 'unofficial'>('official');
@@ -20,8 +20,8 @@ export default function CreatePrediction() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) navigate('/login', { replace: true });
-  }, [isAuthenticated, navigate]);
+    if (!authLoading && !isAuthenticated) navigate('/login', { replace: true });
+  }, [isAuthenticated, authLoading, navigate]);
 
   // Official predictions are always public
   useEffect(() => {

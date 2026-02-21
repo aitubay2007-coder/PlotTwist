@@ -15,7 +15,6 @@ export interface Prediction {
   id: string;
   title: string;
   description: string | null;
-  show_id: string | null;
   creator_id: string;
   mode: 'official' | 'unofficial';
   visibility: 'public' | 'private';

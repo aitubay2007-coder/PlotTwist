@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -12,6 +12,11 @@ export default function Profile() {
   const { t } = useTranslation();
   const { user, isAuthenticated, fetchProfile, setShowLogoutConfirm, adjustCoins } = useAuthStore();
   const [claimingBonus, setClaimingBonus] = useState(false);
+  const bonusAvailable = (() => {
+    if (!user?.last_daily_bonus) return true;
+    const last = new Date(user.last_daily_bonus).getTime();
+    return Date.now() - last >= 24 * 60 * 60 * 1000;
+  })();
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -105,13 +110,16 @@ export default function Profile() {
     }
   };
 
-  const predictionCount = myPredictions.length;
-  const wonBets = myBets.filter(b => {
-    const s = b.predictions?.status;
-    return (b.position === 'yes' && s === 'resolved_yes') || (b.position === 'no' && s === 'resolved_no');
-  }).length;
-  const resolvedBets = myBets.filter(b => b.predictions?.status?.startsWith('resolved')).length;
-  const winRate = resolvedBets > 0 ? Math.round((wonBets / resolvedBets) * 100) : 0;
+  const { predictionCount, resolvedBets, winRate } = useMemo(() => {
+    const pCount = myPredictions.length;
+    const won = myBets.filter(b => {
+      const s = b.predictions?.status;
+      return (b.position === 'yes' && s === 'resolved_yes') || (b.position === 'no' && s === 'resolved_no');
+    }).length;
+    const resolved = myBets.filter(b => b.predictions?.status?.startsWith('resolved')).length;
+    const wr = resolved > 0 ? Math.round((won / resolved) * 100) : 0;
+    return { predictionCount: pCount, wonBets: won, resolvedBets: resolved, winRate: wr };
+  }, [myPredictions, myBets]);
 
   const stats = [
     { icon: <Coins size={32} color="#FFD60A" />, value: (user.coins ?? 0).toLocaleString(), label: t('profile.coins'), color: '#FFD60A' },
@@ -158,16 +166,17 @@ export default function Profile() {
               </button>
               <button
                 onClick={handleDailyBonus}
-                disabled={claimingBonus}
+                disabled={claimingBonus || !bonusAvailable}
                 style={{
-                  padding: '12px 20px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 14,
-                  background: 'rgba(46,213,115,0.15)', border: 'none', color: '#2ED573',
+                  padding: '12px 20px', borderRadius: 10, cursor: bonusAvailable ? 'pointer' : 'default', fontWeight: 700, fontSize: 14,
+                  background: bonusAvailable ? 'rgba(46,213,115,0.15)' : 'rgba(100,116,139,0.1)',
+                  border: 'none', color: bonusAvailable ? '#2ED573' : '#475569',
                   display: 'flex', alignItems: 'center', gap: 8,
                   opacity: claimingBonus ? 0.5 : 1,
                 }}
               >
                 <Gift size={16} />
-                {claimingBonus ? t('common.loading') : t('profile.daily_bonus')}
+                {claimingBonus ? t('common.loading') : bonusAvailable ? t('profile.daily_bonus') : t('profile.bonus_already_claimed')}
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(true)}

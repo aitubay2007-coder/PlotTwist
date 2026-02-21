@@ -83,4 +83,4 @@ export default function Register() {
 }
 
 const labelStyle: React.CSSProperties = { display: 'block', color: '#94A3B8', fontSize: 13, fontWeight: 600, marginBottom: 6 };
-const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 16px', borderRadius: 10, fontSize: 14, background: '#0B1120', border: '1px solid #243044', color: '#E2E8F0', outline: 'none' };
+const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 16px', borderRadius: 10, fontSize: 14, background: '#0B1120', border: '1px solid #243044', color: '#E2E8F0', outline: 'none', boxSizing: 'border-box' };

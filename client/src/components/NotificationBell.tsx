@@ -33,7 +33,7 @@ export default function NotificationBell() {
 
     // Real-time subscription
     const channel = supabase
-      .channel('notifications')
+      .channel(`notifications-${user.id}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -42,7 +42,7 @@ export default function NotificationBell() {
       }, (payload) => {
         const n = payload.new as Notification;
         // Deduplicate: only add if not already in list
-        setNotifications(prev => prev.some(x => x.id === n.id) ? prev : [n, ...prev]);
+        setNotifications(prev => prev.some(x => x.id === n.id) ? prev : [n, ...prev].slice(0, 30));
         setUnreadCount(c => c + 1);
       })
       .subscribe();
@@ -133,7 +133,7 @@ export default function NotificationBell() {
       {open && (
         <div style={{
           position: 'absolute', top: '100%', right: 0, marginTop: 8,
-          width: 340, maxHeight: 420, overflowY: 'auto',
+          width: 340, maxWidth: 'calc(100vw - 32px)', maxHeight: 420, overflowY: 'auto',
           background: '#141C2B', border: '1px solid rgba(255,214,10,0.2)',
           borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
           zIndex: 999,

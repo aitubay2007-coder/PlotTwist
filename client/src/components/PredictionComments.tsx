@@ -45,7 +45,8 @@ export default function PredictionComments({ predictionId }: { predictionId: str
         .from('prediction_comments')
         .select('*, profiles(username, avatar_url)')
         .eq('prediction_id', predictionId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .limit(100);
       if (error) throw error;
       setComments((data as unknown as Comment[]) || []);
     } catch {
