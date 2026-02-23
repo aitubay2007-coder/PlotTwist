@@ -22,7 +22,7 @@ export default function Dashboard() {
       const { data, error } = await withTimeout(
         supabase
           .from('predictions')
-          .select('*, profiles(username)')
+          .select('*, profiles(username), bets(amount)')
           .eq('type', 'official')
           .eq('status', 'open')
           .order('created_at', { ascending: false })
@@ -31,19 +31,14 @@ export default function Dashboard() {
       );
       if (error) throw error;
 
-      const preds = (data || []) as Prediction[];
-      const withStats = await Promise.all(preds.map(async (p) => {
-        const { data: bets } = await supabase
-          .from('bets')
-          .select('amount')
-          .eq('prediction_id', p.id);
-        const betArr = bets || [];
+      const withStats = ((data || []) as (Prediction & { bets: { amount: number }[] })[]).map(p => {
+        const betArr = p.bets || [];
         return {
           ...p,
           bet_count: betArr.length,
           total_pool: betArr.reduce((s, b) => s + (b.amount || 0), 0),
         };
-      }));
+      });
 
       setPredictions(withStats);
     } catch (err) {

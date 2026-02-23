@@ -69,7 +69,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     supabase.auth.onAuthStateChange(async (event) => {
-      if (event === 'SIGNED_IN') await get().fetchProfile();
+      if (event === 'SIGNED_IN' && !get().isAuthenticated) await get().fetchProfile();
       else if (event === 'SIGNED_OUT') set({ user: null, isAuthenticated: false });
     });
   },

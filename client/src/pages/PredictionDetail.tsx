@@ -30,11 +30,14 @@ export default function PredictionDetail() {
       );
       if (pred) setPrediction(pred as Prediction);
 
-      const { data: betData } = await supabase
-        .from('bets')
-        .select('*, profiles(username)')
-        .eq('prediction_id', id)
-        .order('created_at');
+      const { data: betData } = await withTimeout(
+        supabase
+          .from('bets')
+          .select('*, profiles(username)')
+          .eq('prediction_id', id)
+          .order('created_at'),
+        8000
+      );
       setBets((betData || []) as Bet[]);
     } catch {
       setPrediction(null);
