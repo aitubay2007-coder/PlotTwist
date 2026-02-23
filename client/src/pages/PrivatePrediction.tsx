@@ -2,107 +2,54 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
-import { supabase, withTimeout } from '../lib/supabase';
+import { ArrowLeft, Lock, Clock, TrendingUp, Users, CheckCircle, Share2, Copy } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import type { Prediction, Bet } from '../types';
 import BetModal from '../components/BetModal';
 import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
-export default function PredictionDetail() {
-  const { id } = useParams<{ id: string }>();
+interface PrivateData {
+  prediction: {
+    id: string;
+    title: string;
+    description: string | null;
+    status: string;
+    deadline_at: string;
+    resolved_outcome: string | null;
+    creator_id: string;
+    visibility_token: string;
+  };
+  bets: { id: string; user_id: string; outcome: string; amount: number; created_at: string; username: string }[];
+  creator: string;
+}
+
+export default function PrivatePrediction() {
+  const { token } = useParams<{ token: string }>();
   const { t } = useTranslation();
   const { user, isAuthenticated, adjustCoins, fetchProfile } = useAuthStore();
-  const [prediction, setPrediction] = useState<Prediction | null>(null);
-  const [bets, setBets] = useState<Bet[]>([]);
+  const [data, setData] = useState<PrivateData | null>(null);
   const [loading, setLoading] = useState(true);
   const [betModalOpen, setBetModalOpen] = useState(false);
   const [resolving, setResolving] = useState(false);
   const isMobile = useIsMobile();
 
   const fetchData = useCallback(async () => {
-    if (!id) return;
+    if (!token) return;
     try {
-      const { data: pred } = await withTimeout(
-        supabase.from('predictions').select('*, profiles(username)').eq('id', id).single(),
-        8000
-      );
-      if (pred) setPrediction(pred as Prediction);
-
-      const { data: betData } = await supabase
-        .from('bets')
-        .select('*, profiles(username)')
-        .eq('prediction_id', id)
-        .order('created_at');
-      setBets((betData || []) as Bet[]);
+      const { data: result, error } = await supabase.rpc('get_private_prediction', { p_token: token });
+      if (error) throw error;
+      const parsed = typeof result === 'string' ? JSON.parse(result) : result;
+      if (parsed.error) { setData(null); return; }
+      setData(parsed);
     } catch {
-      setPrediction(null);
+      setData(null);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [token]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const totalPool = bets.reduce((s, b) => s + b.amount, 0);
-  const yesPool = bets.filter(b => b.outcome === 'yes').reduce((s, b) => s + b.amount, 0);
-  const noPool = bets.filter(b => b.outcome === 'no').reduce((s, b) => s + b.amount, 0);
-  const yesPct = totalPool > 0 ? Math.round((yesPool / totalPool) * 100) : 50;
-  const userBet = bets.find(b => b.user_id === user?.id);
-  const isExpired = prediction ? new Date(prediction.deadline_at).getTime() < Date.now() : false;
-  const canBet = prediction?.status === 'open' && !isExpired && !userBet && isAuthenticated;
-  const canResolve = prediction?.status === 'open' && isAuthenticated && (
-    (prediction.type === 'official' && user?.is_admin) ||
-    (prediction.type === 'private' && prediction.creator_id === user?.id)
-  );
-
-  const handleBet = async (outcome: 'yes' | 'no', amount: number) => {
-    if (!prediction) return;
-    try {
-      const { data, error } = await supabase.rpc('place_bet', {
-        p_prediction_id: prediction.id,
-        p_outcome: outcome,
-        p_amount: amount,
-      });
-      if (error) throw error;
-      const result = typeof data === 'string' ? JSON.parse(data) : data;
-      if (result.error) { toast.error(result.error); throw new Error(result.error); }
-
-      adjustCoins(-amount);
-      toast.success(t('predictions.bet_placed'));
-      fetchData();
-      fetchProfile();
-    } catch (err) {
-      if (err instanceof Error && err.message !== 'insufficient_coins') {
-        toast.error(err.message || t('common.error'));
-      }
-      throw err;
-    }
-  };
-
-  const handleResolve = async (outcome: 'yes' | 'no') => {
-    if (!prediction) return;
-    setResolving(true);
-    try {
-      const rpc = prediction.type === 'official' ? 'resolve_official' : 'resolve_private';
-      const { data, error } = await supabase.rpc(rpc, {
-        p_prediction_id: prediction.id,
-        p_outcome: outcome,
-      });
-      if (error) throw error;
-      const result = typeof data === 'string' ? JSON.parse(data) : data;
-      if (result.error) { toast.error(result.error); return; }
-
-      toast.success(t('predictions.resolved'));
-      fetchData();
-      fetchProfile();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('common.error'));
-    } finally {
-      setResolving(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -112,16 +59,86 @@ export default function PredictionDetail() {
     );
   }
 
-  if (!prediction) {
+  if (!data) {
     return (
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '60px 24px', textAlign: 'center' }}>
-        <p style={{ color: '#64748B', fontSize: 18 }}>{t('predictions.not_found')}</p>
-        <Link to="/" style={{ color: '#FFD60A', textDecoration: 'none', marginTop: 12, display: 'inline-block' }}>
-          {t('common.back_home')}
-        </Link>
+        <Lock size={48} color="#334155" style={{ margin: '0 auto 12px' }} />
+        <p style={{ color: '#64748B', fontSize: 16 }}>{t('predictions.private_not_found')}</p>
       </div>
     );
   }
+
+  const pred = data.prediction;
+  const bets = data.bets || [];
+  const totalPool = bets.reduce((s, b) => s + b.amount, 0);
+  const yesPool = bets.filter(b => b.outcome === 'yes').reduce((s, b) => s + b.amount, 0);
+  const noPool = bets.filter(b => b.outcome === 'no').reduce((s, b) => s + b.amount, 0);
+  const yesPct = totalPool > 0 ? Math.round((yesPool / totalPool) * 100) : 50;
+  const userBet = bets.find(b => b.user_id === user?.id);
+  const isExpired = new Date(pred.deadline_at).getTime() < Date.now();
+  const canBet = pred.status === 'open' && !isExpired && !userBet && isAuthenticated;
+  const canResolve = pred.status === 'open' && pred.creator_id === user?.id;
+
+  const shareUrl = `${window.location.origin}/p/${token}`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success(t('common.copied'));
+    } catch {
+      toast.error(t('common.error'));
+    }
+  };
+
+  const handleShare = async () => {
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: pred.title, url: shareUrl });
+      } catch { /* cancelled */ }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const handleBet = async (outcome: 'yes' | 'no', amount: number) => {
+    try {
+      const { data: result, error } = await supabase.rpc('place_bet', {
+        p_prediction_id: pred.id,
+        p_outcome: outcome,
+        p_amount: amount,
+      });
+      if (error) throw error;
+      const parsed = typeof result === 'string' ? JSON.parse(result) : result;
+      if (parsed.error) { toast.error(parsed.error); throw new Error(parsed.error); }
+
+      adjustCoins(-amount);
+      toast.success(t('predictions.bet_placed'));
+      fetchData();
+      fetchProfile();
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleResolve = async (outcome: 'yes' | 'no') => {
+    setResolving(true);
+    try {
+      const { data: result, error } = await supabase.rpc('resolve_private', {
+        p_prediction_id: pred.id,
+        p_outcome: outcome,
+      });
+      if (error) throw error;
+      const parsed = typeof result === 'string' ? JSON.parse(result) : result;
+      if (parsed.error) { toast.error(parsed.error); return; }
+      toast.success(t('predictions.resolved'));
+      fetchData();
+      fetchProfile();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('common.error'));
+    } finally {
+      setResolving(false);
+    }
+  };
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '16px' : '32px 24px' }}>
@@ -134,33 +151,54 @@ export default function PredictionDetail() {
           background: '#141C2B', border: '1px solid rgba(255,214,10,0.15)',
           borderRadius: 16, padding: isMobile ? 18 : 28,
         }}>
-          {/* Status badge */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          {/* Badges */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <span style={{
               padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-              background: prediction.status === 'open' ? 'rgba(46,213,115,0.15)' : 'rgba(100,116,139,0.15)',
-              color: prediction.status === 'open' ? '#2ED573' : '#94A3B8',
-              textTransform: 'uppercase',
+              background: 'rgba(224,64,251,0.1)', color: '#E040FB', textTransform: 'uppercase',
+              display: 'flex', alignItems: 'center', gap: 4,
             }}>
-              {prediction.status === 'open' ? t('predictions.open') : t('predictions.resolved')}
+              <Lock size={10} /> {t('predictions.private')}
             </span>
             <span style={{
               padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-              background: 'rgba(255,214,10,0.1)', color: '#FFD60A', textTransform: 'uppercase',
+              background: pred.status === 'open' ? 'rgba(46,213,115,0.15)' : 'rgba(100,116,139,0.15)',
+              color: pred.status === 'open' ? '#2ED573' : '#94A3B8',
+              textTransform: 'uppercase',
             }}>
-              {prediction.type}
+              {pred.status === 'open' ? t('predictions.open') : t('predictions.resolved')}
             </span>
           </div>
 
           <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, color: '#E2E8F0', margin: '0 0 8px', lineHeight: 1.3 }}>
-            {prediction.title}
+            {pred.title}
           </h1>
-          {prediction.description && (
-            <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.6, margin: '0 0 16px' }}>{prediction.description}</p>
+          {pred.description && (
+            <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.6, margin: '0 0 12px' }}>{pred.description}</p>
           )}
           <p style={{ color: '#475569', fontSize: 12 }}>
-            @{prediction.profiles?.username || 'unknown'} · <Clock size={11} style={{ verticalAlign: -1 }} /> {new Date(prediction.deadline_at).toLocaleString()}
+            @{data.creator} · <Clock size={11} style={{ verticalAlign: -1 }} /> {new Date(pred.deadline_at).toLocaleString()}
           </p>
+
+          {/* Share buttons */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button onClick={handleCopyLink} style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+              borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.04)', color: '#94A3B8',
+              fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            }}>
+              <Copy size={13} /> {t('common.copy_link')}
+            </button>
+            <button onClick={handleShare} style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+              borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.04)', color: '#94A3B8',
+              fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            }}>
+              <Share2 size={13} /> {t('common.share')}
+            </button>
+          </div>
 
           {/* Pool stats */}
           <div style={{
@@ -182,11 +220,7 @@ export default function PredictionDetail() {
 
           {/* Pool bar */}
           <div style={{ marginTop: 16, borderRadius: 8, overflow: 'hidden', height: 8, background: '#1C2538' }}>
-            <div style={{
-              width: `${yesPct}%`, height: '100%',
-              background: 'linear-gradient(90deg, #2ED573, #00D4FF)',
-              transition: 'width 0.3s',
-            }} />
+            <div style={{ width: `${yesPct}%`, height: '100%', background: 'linear-gradient(90deg, #2ED573, #00D4FF)', transition: 'width 0.3s' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 11, color: '#64748B' }}>
             <span>{t('predictions.yes')} {yesPool.toLocaleString()}</span>
@@ -194,23 +228,19 @@ export default function PredictionDetail() {
           </div>
 
           {/* Resolved outcome */}
-          {prediction.status === 'resolved' && prediction.resolved_outcome && (
+          {pred.status === 'resolved' && pred.resolved_outcome && (
             <div style={{
-              marginTop: 20, padding: 16, borderRadius: 12,
-              background: prediction.resolved_outcome === 'yes' ? 'rgba(46,213,115,0.1)' : 'rgba(255,71,87,0.1)',
-              border: `1px solid ${prediction.resolved_outcome === 'yes' ? 'rgba(46,213,115,0.3)' : 'rgba(255,71,87,0.3)'}`,
-              textAlign: 'center',
+              marginTop: 20, padding: 16, borderRadius: 12, textAlign: 'center',
+              background: pred.resolved_outcome === 'yes' ? 'rgba(46,213,115,0.1)' : 'rgba(255,71,87,0.1)',
+              border: `1px solid ${pred.resolved_outcome === 'yes' ? 'rgba(46,213,115,0.3)' : 'rgba(255,71,87,0.3)'}`,
             }}>
-              <span style={{
-                fontSize: 18, fontWeight: 700,
-                color: prediction.resolved_outcome === 'yes' ? '#2ED573' : '#FF4757',
-              }}>
-                {t('predictions.result')}: {prediction.resolved_outcome.toUpperCase()}
+              <span style={{ fontSize: 18, fontWeight: 700, color: pred.resolved_outcome === 'yes' ? '#2ED573' : '#FF4757' }}>
+                {t('predictions.result')}: {pred.resolved_outcome.toUpperCase()}
               </span>
             </div>
           )}
 
-          {/* User's bet */}
+          {/* User bet */}
           {userBet && (
             <div style={{
               marginTop: 16, padding: 12, borderRadius: 10,
@@ -218,49 +248,35 @@ export default function PredictionDetail() {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
               <span style={{ color: '#94A3B8', fontSize: 13 }}>{t('predictions.your_bet')}</span>
-              <span style={{
-                fontWeight: 700, fontSize: 14,
-                color: userBet.outcome === 'yes' ? '#2ED573' : '#FF4757',
-              }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: userBet.outcome === 'yes' ? '#2ED573' : '#FF4757' }}>
                 {userBet.outcome.toUpperCase()} — {userBet.amount} {t('common.coins')}
               </span>
             </div>
           )}
 
-          {/* Action buttons */}
+          {/* Actions */}
           {canBet && (
-            <button
-              onClick={() => setBetModalOpen(true)}
-              style={{
-                width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
-                cursor: 'pointer', fontWeight: 700, fontSize: 16, marginTop: 20,
-                background: '#FFD60A', color: '#0B1120',
-              }}
-            >
+            <button onClick={() => setBetModalOpen(true)} style={{
+              width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
+              cursor: 'pointer', fontWeight: 700, fontSize: 16, marginTop: 20,
+              background: '#FFD60A', color: '#0B1120',
+            }}>
               {t('predictions.place_bet')}
             </button>
           )}
 
           {canResolve && (
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button
-                onClick={() => handleResolve('yes')} disabled={resolving}
-                style={{
-                  flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
-                  fontWeight: 700, fontSize: 15, background: '#2ED573', color: '#fff',
-                  opacity: resolving ? 0.5 : 1,
-                }}
-              >
+              <button onClick={() => handleResolve('yes')} disabled={resolving} style={{
+                flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
+                fontWeight: 700, fontSize: 15, background: '#2ED573', color: '#fff', opacity: resolving ? 0.5 : 1,
+              }}>
                 {t('predictions.resolve_yes')}
               </button>
-              <button
-                onClick={() => handleResolve('no')} disabled={resolving}
-                style={{
-                  flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
-                  fontWeight: 700, fontSize: 15, background: '#FF4757', color: '#fff',
-                  opacity: resolving ? 0.5 : 1,
-                }}
-              >
+              <button onClick={() => handleResolve('no')} disabled={resolving} style={{
+                flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
+                fontWeight: 700, fontSize: 15, background: '#FF4757', color: '#fff', opacity: resolving ? 0.5 : 1,
+              }}>
                 {t('predictions.resolve_no')}
               </button>
             </div>
@@ -282,7 +298,7 @@ export default function PredictionDetail() {
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '10px 14px', background: '#0B1120', borderRadius: 10,
                 }}>
-                  <span style={{ color: '#94A3B8', fontSize: 13 }}>@{b.profiles?.username || '?'}</span>
+                  <span style={{ color: '#94A3B8', fontSize: 13 }}>@{b.username || '?'}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0' }}>{b.amount}</span>
                     <span style={{
@@ -300,14 +316,12 @@ export default function PredictionDetail() {
         )}
       </motion.div>
 
-      {prediction && (
-        <BetModal
-          isOpen={betModalOpen}
-          onClose={() => setBetModalOpen(false)}
-          prediction={{ id: prediction.id, title: prediction.title, total_yes: yesPool, total_no: noPool }}
-          onBetPlaced={handleBet}
-        />
-      )}
+      <BetModal
+        isOpen={betModalOpen}
+        onClose={() => setBetModalOpen(false)}
+        prediction={{ id: pred.id, title: pred.title, total_yes: yesPool, total_no: noPool }}
+        onBetPlaced={handleBet}
+      />
     </div>
   );
 }

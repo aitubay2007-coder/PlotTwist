@@ -8,10 +8,10 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import PredictionDetail from './pages/PredictionDetail';
+import PrivatePrediction from './pages/PrivatePrediction';
 import CreatePrediction from './pages/CreatePrediction';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
-import Transactions from './pages/Transactions';
 
 export default function App() {
   const { initialize, isLoading } = useAuthStore();
@@ -55,10 +55,10 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/prediction/:id" element={<PredictionDetail />} />
+          <Route path="/p/:token" element={<PrivatePrediction />} />
           <Route path="/create" element={<CreatePrediction />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/transactions" element={<Transactions />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types';
 
-// Error codes that UI will map to i18n keys
 export type AuthErrorCode =
   | 'err_invalid_credentials'
   | 'err_email_not_confirmed'
@@ -27,7 +26,6 @@ interface AuthState {
   isAuthenticated: boolean;
   showLogoutConfirm: boolean;
   setShowLogoutConfirm: (show: boolean) => void;
-  /** Instantly adjust coins in UI (optimistic). Pass negative to deduct. */
   adjustCoins: (delta: number) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, username: string) => Promise<void>;
@@ -46,7 +44,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   adjustCoins: (delta) => {
     const u = get().user;
-    if (u) set({ user: { ...u, coins: Math.max(0, u.coins + delta) } });
+    if (u) set({ user: { ...u, coins_balance: Math.max(0, u.coins_balance + delta) } });
   },
 
   initialize: async () => {
@@ -55,9 +53,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    // Timeout: don't block the app if Supabase is slow
     const timeout = setTimeout(() => {
-      console.warn('[PT] init timeout — loading app without auth');
+      console.warn('[PT] init timeout');
       set({ isLoading: false });
     }, 5000);
 
@@ -88,7 +85,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   register: async (email, password, username) => {
-    // 1. Sign up
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { data: { username } },
@@ -99,15 +95,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw new AuthError('err_register_failed', error.message);
     }
 
-    // Supabase returns fake success (empty identities) when email already exists
-    if (data.user && data.user.identities && data.user.identities.length === 0) {
+    if (data.user?.identities?.length === 0) {
       throw new AuthError('err_already_registered');
     }
 
     const userId = data.user?.id;
     if (!userId) throw new AuthError('err_no_user_id');
 
-    // 2. Auto-login if no session
     if (!data.session) {
       const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
       if (loginErr) {
@@ -116,7 +110,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     }
 
-    // 3. Wait for trigger profile
     for (let i = 0; i < 8; i++) {
       await new Promise(r => setTimeout(r, 500));
       const { data: profile } = await supabase
@@ -127,28 +120,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     }
 
-    // 4. Manual fallback — trigger may have fired late, handle duplicate key
-    const { data: inserted, error: insertErr } = await supabase
-      .from('profiles')
-      .insert({ id: userId, username, coins: 1000 })
-      .select()
-      .single();
-    if (insertErr) {
-      // Duplicate key = trigger created the profile just in time
-      if (insertErr.code === '23505') {
-        const { data: existing } = await supabase.from('profiles').select('*').eq('id', userId).single();
-        if (existing) {
-          set({ user: existing as Profile, isAuthenticated: true });
-          return;
-        }
-      }
-      console.error('[PT] Manual profile insert failed:', insertErr);
-      throw new AuthError('err_register_failed', insertErr.message);
-    }
-    set({
-      user: (inserted as Profile) || { id: userId, username, display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: new Date().toISOString(), last_daily_bonus: null, is_admin: false },
-      isAuthenticated: true,
-    });
+    throw new AuthError('err_register_failed', 'Profile creation timeout');
   },
 
   logout: async () => {
@@ -165,10 +137,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (profile) {
         set({ user: profile as Profile, isAuthenticated: true });
       } else {
-        set({
-          user: { id: au.id, username: au.user_metadata?.username || 'user', display_name: null, avatar_url: null, coins: 1000, reputation: 0, country: null, created_at: au.created_at, last_daily_bonus: null, is_admin: false },
-          isAuthenticated: true,
-        });
+        set({ user: null, isAuthenticated: false });
       }
     } catch {
       set({ user: null, isAuthenticated: false });

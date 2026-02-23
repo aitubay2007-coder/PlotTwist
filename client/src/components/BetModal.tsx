@@ -4,215 +4,142 @@ import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 
-interface BetModalPrediction {
-  id: string;
-  title: string;
-  total_yes: number;
-  total_no: number;
-}
-
 interface BetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  prediction: BetModalPrediction;
-  onBetPlaced: (position: 'yes' | 'no', amount: number) => void | Promise<void>;
+  prediction: { id: string; title: string; total_yes: number; total_no: number };
+  onBetPlaced: (outcome: 'yes' | 'no', amount: number) => void | Promise<void>;
 }
 
 const MIN_BET = 10;
 
-export default function BetModal({
-  isOpen,
-  onClose,
-  prediction,
-  onBetPlaced,
-}: BetModalProps) {
+export default function BetModal({ isOpen, onClose, prediction, onBetPlaced }: BetModalProps) {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const maxCoins = user?.coins ?? 0;
+  const maxCoins = user?.coins_balance ?? 0;
   const canBet = maxCoins >= MIN_BET;
-  const maxBet = maxCoins;
 
-  const [position, setPosition] = useState<'yes' | 'no' | null>(null);
+  const [outcome, setOutcome] = useState<'yes' | 'no' | null>(null);
   const [amount, setAmount] = useState(MIN_BET);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset amount when modal opens or balance changes
   useEffect(() => {
-    if (isOpen && amount > maxBet) {
-      setAmount(maxBet >= MIN_BET ? maxBet : MIN_BET);
+    if (isOpen && amount > maxCoins) {
+      setAmount(maxCoins >= MIN_BET ? maxCoins : MIN_BET);
     }
-  }, [isOpen, maxBet, amount]);
+  }, [isOpen, maxCoins, amount]);
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  const handleClose = () => {
-    setPosition(null);
-    setAmount(MIN_BET);
-    onClose();
-  };
+  const handleClose = () => { setOutcome(null); setAmount(MIN_BET); onClose(); };
 
   const handleConfirm = async () => {
-    if (!canBet || !position || amount < MIN_BET || amount > maxBet) return;
+    if (!canBet || !outcome || amount < MIN_BET || amount > maxCoins) return;
     setIsSubmitting(true);
     try {
-      await onBetPlaced(position, amount);
+      await onBetPlaced(outcome, amount);
       handleClose();
     } catch {
-      // Error handled by parent via toast
+      // error shown by parent
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const totalPool = (prediction.total_yes ?? 0) + (prediction.total_no ?? 0);
-  const yesPool = (prediction.total_yes ?? 0) + amount;
-  const noPool = (prediction.total_no ?? 0) + amount;
-  const potentialReturn =
-    position === 'yes'
-      ? amount * ((totalPool + amount) / Math.max(yesPool, 1))
-      : position === 'no'
-        ? amount * ((totalPool + amount) / Math.max(noPool, 1))
-        : 0;
+  const totalPool = prediction.total_yes + prediction.total_no;
+  const potentialReturn = outcome
+    ? amount * ((totalPool + amount) / Math.max((outcome === 'yes' ? prediction.total_yes : prediction.total_no) + amount, 1))
+    : 0;
   const potentialProfit = potentialReturn > 0 ? potentialReturn - amount : 0;
-
-  const sliderMax = Math.max(MIN_BET, maxBet);
+  const sliderMax = Math.max(MIN_BET, maxCoins);
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={handleOverlayClick}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          onClick={e => { if (e.target === e.currentTarget) handleClose(); }}
           style={{
             position: 'fixed', inset: 0, zIndex: 50,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-            padding: 16,
+            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', padding: 16,
           }}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             style={{
               background: '#141C2B', border: '1px solid rgba(255,214,10,0.2)',
               borderRadius: 16, padding: 24, width: '100%', maxWidth: 420,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
             }}
           >
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h2 style={{ fontSize: 18, fontWeight: 600, color: '#E2E8F0', margin: 0, paddingRight: 16, lineHeight: 1.4 }}>
                 {prediction.title}
               </h2>
-              <button
-                onClick={handleClose}
-                aria-label={t('common.close')}
-                style={{ padding: 4, borderRadius: 6, border: 'none', cursor: 'pointer', background: 'transparent', color: '#64748B' }}
-              >
+              <button onClick={handleClose} style={{ padding: 4, borderRadius: 6, border: 'none', cursor: 'pointer', background: 'transparent', color: '#64748B' }}>
                 <X size={20} />
               </button>
             </div>
 
-            {/* YES / NO buttons */}
+            {/* YES / NO */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-              <button
-                onClick={() => setPosition('yes')}
-                style={{
+              {(['yes', 'no'] as const).map(o => (
+                <button key={o} onClick={() => setOutcome(o)} style={{
                   flex: 1, padding: '14px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
                   fontWeight: 700, fontSize: 16, transition: 'all 0.2s',
-                  background: position === 'yes' ? '#2ED573' : 'rgba(46,213,115,0.15)',
-                  color: position === 'yes' ? '#fff' : '#2ED573',
-                  boxShadow: position === 'yes' ? '0 0 0 3px rgba(46,213,115,0.3)' : 'none',
-                }}
-              >
-                {t('predictions.vote_yes')}
-              </button>
-              <button
-                onClick={() => setPosition('no')}
-                style={{
-                  flex: 1, padding: '14px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-                  fontWeight: 700, fontSize: 16, transition: 'all 0.2s',
-                  background: position === 'no' ? '#FF4757' : 'rgba(255,71,87,0.15)',
-                  color: position === 'no' ? '#fff' : '#FF4757',
-                  boxShadow: position === 'no' ? '0 0 0 3px rgba(255,71,87,0.3)' : 'none',
-                }}
-              >
-                {t('predictions.vote_no')}
-              </button>
+                  background: outcome === o ? (o === 'yes' ? '#2ED573' : '#FF4757') : (o === 'yes' ? 'rgba(46,213,115,0.15)' : 'rgba(255,71,87,0.15)'),
+                  color: outcome === o ? '#fff' : (o === 'yes' ? '#2ED573' : '#FF4757'),
+                }}>
+                  {o.toUpperCase()}
+                </button>
+              ))}
             </div>
 
-            {/* Balance display */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, padding: '0 2px' }}>
+            {/* Balance */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
               <span style={{ fontSize: 13, color: '#94A3B8' }}>{t('predictions.your_balance')}</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: canBet ? '#FFD60A' : '#FF4757' }}>
-                {maxCoins.toLocaleString()} {t('common.coins_short')}
+                {maxCoins.toLocaleString()} {t('common.coins')}
               </span>
             </div>
 
             {!canBet ? (
-              <div style={{
-                textAlign: 'center', padding: 16, marginBottom: 16,
-                background: 'rgba(255,71,87,0.1)', borderRadius: 10,
-              }}>
-                <p style={{ color: '#FF4757', fontSize: 14, fontWeight: 600, margin: 0 }}>
-                  {t('predictions.insufficient_coins')}
-                </p>
+              <div style={{ textAlign: 'center', padding: 16, marginBottom: 16, background: 'rgba(255,71,87,0.1)', borderRadius: 10 }}>
+                <p style={{ color: '#FF4757', fontSize: 14, fontWeight: 600, margin: 0 }}>{t('predictions.insufficient_coins')}</p>
               </div>
             ) : (
               <>
-                {/* Amount slider */}
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', color: '#94A3B8', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
-                    {t('predictions.amount')} ({t('predictions.amount_range', { min: MIN_BET, max: maxBet })})
+                    {t('predictions.amount')}
                   </label>
-                  <input
-                    type="range"
-                    min={MIN_BET}
-                    max={sliderMax}
-                    value={Math.min(amount, sliderMax)}
-                    onChange={(e) => setAmount(Number(e.target.value))}
+                  <input type="range" min={MIN_BET} max={sliderMax} value={Math.min(amount, sliderMax)}
+                    onChange={e => setAmount(Number(e.target.value))}
                     style={{ width: '100%', height: 8, cursor: 'pointer', accentColor: '#FFD60A' }}
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 13 }}>
                     <span style={{ color: '#64748B' }}>{MIN_BET}</span>
                     <span style={{ color: '#FFD60A', fontWeight: 700, fontSize: 18 }}>{amount}</span>
-                    <span style={{ color: '#64748B' }}>{maxBet}</span>
+                    <span style={{ color: '#64748B' }}>{maxCoins}</span>
                   </div>
                 </div>
 
-                {/* Potential winnings */}
-                {position && amount >= MIN_BET && (
-                  <div style={{ marginBottom: 16 }}>
-                    <p style={{ color: '#94A3B8', fontSize: 13, margin: '0 0 6px' }}>
-                      {t('predictions.potential_winnings')}:{' '}
-                      <span style={{ color: '#2ED573', fontWeight: 600 }}>
-                        +{potentialProfit.toFixed(0)} {t('common.coins')}
-                      </span>
-                    </p>
-                    <p style={{ color: '#475569', fontSize: 11, margin: 0, lineHeight: 1.4 }}>
-                      {t('bet_tooltip.payout_explanation')}
-                    </p>
-                  </div>
+                {outcome && amount >= MIN_BET && (
+                  <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 16 }}>
+                    {t('predictions.potential_winnings')}:{' '}
+                    <span style={{ color: '#2ED573', fontWeight: 600 }}>+{potentialProfit.toFixed(0)} {t('common.coins')}</span>
+                  </p>
                 )}
               </>
             )}
 
-            {/* Confirm */}
-            <button
-              onClick={handleConfirm}
-              disabled={!canBet || !position || amount < MIN_BET || amount > maxBet || isSubmitting}
+            <button onClick={handleConfirm}
+              disabled={!canBet || !outcome || amount < MIN_BET || isSubmitting}
               style={{
                 width: '100%', padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
                 fontWeight: 700, fontSize: 16, transition: 'all 0.2s',
-                background: (canBet && position && !isSubmitting) ? '#FFD60A' : '#1C2538',
-                color: (canBet && position && !isSubmitting) ? '#0B1120' : '#64748B',
+                background: (canBet && outcome && !isSubmitting) ? '#FFD60A' : '#1C2538',
+                color: (canBet && outcome && !isSubmitting) ? '#0B1120' : '#64748B',
                 opacity: isSubmitting ? 0.6 : 1,
               }}
             >

@@ -2,59 +2,41 @@ export interface Profile {
   id: string;
   username: string;
   display_name: string | null;
-  avatar_url: string | null;
-  coins: number;
-  reputation: number;
-  country: string | null;
-  last_daily_bonus: string | null;
+  coins_balance: number;
   is_admin: boolean;
+  last_daily_bonus: string | null;
   created_at: string;
 }
 
 export interface Prediction {
   id: string;
+  creator_id: string;
+  type: 'official' | 'private';
   title: string;
   description: string | null;
-  creator_id: string;
-  mode: 'official' | 'unofficial';
-  visibility: 'public' | 'private';
-  status: 'active' | 'resolved_yes' | 'resolved_no' | 'cancelled';
-  deadline: string;
-  resolved_at: string | null;
-  disputed: boolean;
-  total_yes: number;
-  total_no: number;
-  total_pool: number;
+  status: 'open' | 'resolved';
+  deadline_at: string;
+  resolved_outcome: 'yes' | 'no' | null;
+  visibility_token: string | null;
   created_at: string;
-  profiles?: Pick<Profile, 'username' | 'avatar_url'>;
-  bets?: Bet[];
-}
-
-export interface PredictionDispute {
-  id: string;
-  prediction_id: string;
-  user_id: string;
-  vote: 'yes' | 'no';
-  reason: string | null;
-  created_at: string;
+  profiles?: { username: string };
 }
 
 export interface Bet {
   id: string;
-  user_id: string;
   prediction_id: string;
-  position: 'yes' | 'no';
+  user_id: string;
+  outcome: 'yes' | 'no';
   amount: number;
   created_at: string;
-  profiles?: Pick<Profile, 'username' | 'avatar_url'>;
+  username?: string;
+  profiles?: { username: string };
 }
 
 export interface Transaction {
   id: string;
   user_id: string;
-  type: 'signup_bonus' | 'bet_placed' | 'bet_won' | 'challenge_sent' | 'challenge_accepted' | 'challenge_won' | 'challenge_refund' | 'daily_bonus';
-  amount: number;
-  reference_id: string | null;
-  description: string | null;
+  type: 'bet' | 'payout' | 'bonus' | 'refund';
+  delta: number;
   created_at: string;
 }

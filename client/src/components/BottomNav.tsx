@@ -13,7 +13,7 @@ export default function BottomNav() {
   if (!isMobile) return null;
 
   const active = (path: string) =>
-    path === '/' ? loc.pathname === '/' || loc.pathname === '/dashboard' : loc.pathname.startsWith(path);
+    path === '/' ? loc.pathname === '/' : loc.pathname.startsWith(path);
 
   return (
     <div style={{
