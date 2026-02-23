@@ -347,7 +347,7 @@ BEGIN
   SELECT COALESCE(SUM(amount), 0) INTO v_total_pool FROM public.bets WHERE prediction_id = p_prediction_id;
   SELECT COALESCE(SUM(amount), 0) INTO v_winners_pool FROM public.bets WHERE prediction_id = p_prediction_id AND outcome = p_outcome;
 
-  -- Pay winners
+  -- Pay winners or refund everyone if no winners
   IF v_winners_pool > 0 AND v_total_pool > 0 THEN
     FOR v_bet IN
       SELECT user_id, amount FROM public.bets
@@ -359,6 +359,15 @@ BEGIN
       VALUES (v_bet.user_id, 'payout', v_payout);
       v_winners := v_winners + 1;
       v_paid := v_paid + v_payout;
+    END LOOP;
+  ELSIF v_total_pool > 0 AND v_winners_pool = 0 THEN
+    FOR v_bet IN
+      SELECT user_id, amount FROM public.bets WHERE prediction_id = p_prediction_id
+    LOOP
+      UPDATE public.profiles SET coins_balance = coins_balance + v_bet.amount WHERE id = v_bet.user_id;
+      INSERT INTO public.transactions (user_id, type, delta)
+      VALUES (v_bet.user_id, 'refund', v_bet.amount);
+      v_paid := v_paid + v_bet.amount;
     END LOOP;
   END IF;
 
@@ -405,7 +414,7 @@ BEGIN
   SELECT COALESCE(SUM(amount), 0) INTO v_total_pool FROM public.bets WHERE prediction_id = p_prediction_id;
   SELECT COALESCE(SUM(amount), 0) INTO v_winners_pool FROM public.bets WHERE prediction_id = p_prediction_id AND outcome = p_outcome;
 
-  -- Pay winners
+  -- Pay winners or refund everyone if no winners
   IF v_winners_pool > 0 AND v_total_pool > 0 THEN
     FOR v_bet IN
       SELECT user_id, amount FROM public.bets
@@ -417,6 +426,15 @@ BEGIN
       VALUES (v_bet.user_id, 'payout', v_payout);
       v_winners := v_winners + 1;
       v_paid := v_paid + v_payout;
+    END LOOP;
+  ELSIF v_total_pool > 0 AND v_winners_pool = 0 THEN
+    FOR v_bet IN
+      SELECT user_id, amount FROM public.bets WHERE prediction_id = p_prediction_id
+    LOOP
+      UPDATE public.profiles SET coins_balance = coins_balance + v_bet.amount WHERE id = v_bet.user_id;
+      INSERT INTO public.transactions (user_id, type, delta)
+      VALUES (v_bet.user_id, 'refund', v_bet.amount);
+      v_paid := v_paid + v_bet.amount;
     END LOOP;
   END IF;
 
@@ -518,8 +536,12 @@ DROP POLICY IF EXISTS "predictions_select" ON public.predictions;
 DROP POLICY IF EXISTS "predictions_insert" ON public.predictions;
 DROP POLICY IF EXISTS "Authenticated users can create predictions" ON public.predictions;
 
-CREATE POLICY "predictions_select_official" ON public.predictions FOR SELECT
-  USING (type = 'official');
+CREATE POLICY "predictions_select" ON public.predictions FOR SELECT
+  USING (
+    type = 'official'
+    OR creator_id = auth.uid()
+    OR id IN (SELECT prediction_id FROM public.bets WHERE user_id = auth.uid())
+  );
 
 -- BETS
 ALTER TABLE public.bets ENABLE ROW LEVEL SECURITY;

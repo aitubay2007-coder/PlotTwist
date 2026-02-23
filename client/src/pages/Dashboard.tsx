@@ -31,14 +31,17 @@ export default function Dashboard() {
       );
       if (error) throw error;
 
-      const withStats = ((data || []) as (Prediction & { bets: { amount: number }[] })[]).map(p => {
-        const betArr = p.bets || [];
-        return {
-          ...p,
-          bet_count: betArr.length,
-          total_pool: betArr.reduce((s, b) => s + (b.amount || 0), 0),
-        };
-      });
+      const now = Date.now();
+      const withStats = ((data || []) as (Prediction & { bets: { amount: number }[] })[])
+        .filter(p => new Date(p.deadline_at).getTime() > now)
+        .map(p => {
+          const betArr = p.bets || [];
+          return {
+            ...p,
+            bet_count: betArr.length,
+            total_pool: betArr.reduce((s, b) => s + (b.amount || 0), 0),
+          };
+        });
 
       setPredictions(withStats);
     } catch (err) {

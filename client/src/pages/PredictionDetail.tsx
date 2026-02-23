@@ -76,9 +76,10 @@ export default function PredictionDetail() {
       toast.success(t('predictions.bet_placed'));
       fetchData();
       fetchProfile();
-    } catch (err) {
-      if (err instanceof Error && err.message !== 'insufficient_coins') {
-        toast.error(err.message || t('common.error'));
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message;
+      if (msg && msg !== 'insufficient_coins') {
+        toast.error(msg || t('common.error'));
       }
       throw err;
     }
@@ -100,8 +101,8 @@ export default function PredictionDetail() {
       toast.success(t('predictions.resolved'));
       fetchData();
       fetchProfile();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('common.error'));
+    } catch (err: unknown) {
+      toast.error((err as { message?: string })?.message || t('common.error'));
     } finally {
       setResolving(false);
     }
