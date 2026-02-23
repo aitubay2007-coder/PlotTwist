@@ -72,7 +72,12 @@
     "coins": "Coins",
     "total_bets": "Total Bets",
     "win_rate": "Win Rate",
-    "recent_transactions": "Recent Transactions",
+    "my_bets": "My Bets",
+    "no_bets": "You haven't placed any bets yet",
+    "bet_won": "Won",
+    "bet_lost": "Lost",
+    "bet_pending": "Pending",
+    "recent_transactions": "Transactions",
     "no_transactions": "No transactions yet"
   },
   "auth": {

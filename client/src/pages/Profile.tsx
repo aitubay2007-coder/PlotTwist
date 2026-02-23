@@ -1,23 +1,38 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gift, LogOut, Edit3 } from 'lucide-react';
+import { Gift, LogOut, Edit3, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import type { Transaction } from '../types';
 import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
+interface MyBetItem {
+  id: string;
+  outcome: string;
+  amount: number;
+  created_at: string;
+  prediction_id: string;
+  prediction_title: string;
+  prediction_status: string;
+  prediction_type: string;
+  resolved_outcome: string | null;
+  visibility_token: string | null;
+}
+
 export default function Profile() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user, isAuthenticated, fetchProfile, setShowLogoutConfirm, adjustCoins } = useAuthStore();
   const [claimingBonus, setClaimingBonus] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [saving, setSaving] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [myBets, setMyBets] = useState<{ outcome: string; amount: number; status: string; resolved_outcome: string | null }[]>([]);
+  const [myBets, setMyBets] = useState<MyBetItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'bets' | 'transactions'>('bets');
   const isMobile = useIsMobile();
 
   const bonusAvailable = useMemo(() => {
@@ -36,13 +51,24 @@ export default function Profile() {
     ).then(({ data }) => setTransactions((data || []) as Transaction[])).catch(() => {});
 
     withTimeout(
-      supabase.from('bets').select('outcome, amount, predictions(status, resolved_outcome)')
-        .eq('user_id', user.id).limit(100),
+      supabase.from('bets').select('id, outcome, amount, created_at, prediction_id, predictions(title, status, type, resolved_outcome, visibility_token)')
+        .eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
       8000
     ).then(({ data }) => {
       const mapped = (data || []).map((b: Record<string, unknown>) => {
-        const pred = b.predictions as { status: string; resolved_outcome: string | null } | null;
-        return { outcome: b.outcome as string, amount: b.amount as number, status: pred?.status || '', resolved_outcome: pred?.resolved_outcome || null };
+        const pred = b.predictions as { title: string; status: string; type: string; resolved_outcome: string | null; visibility_token: string | null } | null;
+        return {
+          id: b.id as string,
+          outcome: b.outcome as string,
+          amount: b.amount as number,
+          created_at: b.created_at as string,
+          prediction_id: b.prediction_id as string,
+          prediction_title: pred?.title || '—',
+          prediction_status: pred?.status || '',
+          prediction_type: pred?.type || 'official',
+          resolved_outcome: pred?.resolved_outcome || null,
+          visibility_token: pred?.visibility_token || null,
+        };
       });
       setMyBets(mapped);
     }).catch(() => {});
@@ -58,10 +84,23 @@ export default function Profile() {
   }
 
   const { winRate, totalBets } = useMemo(() => {
-    const resolved = myBets.filter(b => b.status === 'resolved');
+    const resolved = myBets.filter(b => b.prediction_status === 'resolved');
     const won = resolved.filter(b => b.outcome === b.resolved_outcome).length;
-    return { totalBets: myBets.length, wonBets: won, winRate: resolved.length > 0 ? Math.round((won / resolved.length) * 100) : 0 };
+    return { totalBets: myBets.length, winRate: resolved.length > 0 ? Math.round((won / resolved.length) * 100) : 0 };
   }, [myBets]);
+
+  const getBetResult = (bet: MyBetItem): 'won' | 'lost' | 'pending' => {
+    if (bet.prediction_status !== 'resolved' || !bet.resolved_outcome) return 'pending';
+    return bet.outcome === bet.resolved_outcome ? 'won' : 'lost';
+  };
+
+  const handleBetClick = (bet: MyBetItem) => {
+    if (bet.prediction_type === 'private' && bet.visibility_token) {
+      navigate(`/p/${bet.visibility_token}`);
+    } else {
+      navigate(`/prediction/${bet.prediction_id}`);
+    }
+  };
 
   const handleDailyBonus = async () => {
     setClaimingBonus(true);
@@ -163,46 +202,148 @@ export default function Profile() {
           ))}
         </div>
 
-        {/* Recent transactions */}
+        {/* Tabs */}
         <div style={{
           background: '#141C2B', border: '1px solid rgba(255,214,10,0.1)',
-          borderRadius: 16, padding: isMobile ? 18 : 28,
+          borderRadius: 16, overflow: 'hidden',
         }}>
-          <h3 style={{ fontFamily: "'Bangers', cursive", fontSize: 20, color: '#FFD60A', margin: '0 0 16px' }}>
-            {t('profile.recent_transactions')}
-          </h3>
-          {transactions.length === 0 ? (
-            <p style={{ color: '#475569', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>
-              {t('profile.no_transactions')}
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {transactions.map(tx => (
-                <div key={tx.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '10px 14px', background: '#0B1120', borderRadius: 10,
-                }}>
-                  <div>
-                    <span style={{
-                      padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
-                      background: 'rgba(255,214,10,0.08)', color: '#FFD60A', textTransform: 'uppercase',
-                    }}>
-                      {tx.type}
-                    </span>
-                    <span style={{ color: '#475569', fontSize: 11, marginLeft: 8 }}>
-                      {new Date(tx.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            {(['bets', 'transactions'] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  flex: 1, padding: '14px 0', border: 'none', cursor: 'pointer',
+                  fontWeight: 700, fontSize: 13, letterSpacing: 0.5,
+                  background: activeTab === tab ? 'rgba(255,214,10,0.06)' : 'transparent',
+                  color: activeTab === tab ? '#FFD60A' : '#64748B',
+                  borderBottom: activeTab === tab ? '2px solid #FFD60A' : '2px solid transparent',
+                  transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                {tab === 'bets' ? <TrendingUp size={14} /> : null}
+                {tab === 'bets' ? t('profile.my_bets') : t('profile.recent_transactions')}
+                {tab === 'bets' && myBets.length > 0 && (
                   <span style={{
-                    fontWeight: 700, fontSize: 14,
-                    color: tx.delta >= 0 ? '#2ED573' : '#FF4757',
-                  }}>
-                    {tx.delta >= 0 ? '+' : ''}{tx.delta}
-                  </span>
+                    padding: '1px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700,
+                    background: 'rgba(255,214,10,0.15)', color: '#FFD60A',
+                  }}>{myBets.length}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ padding: isMobile ? 18 : 28 }}>
+            {activeTab === 'bets' ? (
+              myBets.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                  <TrendingUp size={40} color="#1C2538" style={{ marginBottom: 8 }} />
+                  <p style={{ color: '#475569', fontSize: 13 }}>{t('profile.no_bets')}</p>
                 </div>
-              ))}
-            </div>
-          )}
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {myBets.map(bet => {
+                    const result = getBetResult(bet);
+                    const resultColor = result === 'won' ? '#2ED573' : result === 'lost' ? '#FF4757' : '#FFD60A';
+                    const ResultIcon = result === 'won' ? CheckCircle : result === 'lost' ? XCircle : Clock;
+
+                    return (
+                      <motion.div
+                        key={bet.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={() => handleBetClick(bet)}
+                        style={{
+                          padding: '14px 16px', background: '#0B1120', borderRadius: 12,
+                          cursor: 'pointer', border: '1px solid rgba(255,255,255,0.03)',
+                          transition: 'border-color 0.2s',
+                        }}
+                        whileHover={{ borderColor: 'rgba(255,214,10,0.15)' } as never}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                          <div style={{
+                            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: `${resultColor}15`,
+                          }}>
+                            <ResultIcon size={18} color={resultColor} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{
+                              color: '#E2E8F0', fontSize: 13, fontWeight: 600, margin: 0,
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}>
+                              {bet.prediction_title}
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                              <span style={{
+                                padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                                background: bet.outcome === 'yes' ? 'rgba(46,213,115,0.12)' : 'rgba(255,71,87,0.12)',
+                                color: bet.outcome === 'yes' ? '#2ED573' : '#FF4757',
+                                textTransform: 'uppercase',
+                              }}>
+                                {bet.outcome}
+                              </span>
+                              <span style={{ color: '#64748B', fontSize: 11 }}>
+                                {bet.amount} {t('common.coins')}
+                              </span>
+                              <span style={{
+                                padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                                background: `${resultColor}12`,
+                                color: resultColor,
+                              }}>
+                                {result === 'won' ? t('profile.bet_won') : result === 'lost' ? t('profile.bet_lost') : t('profile.bet_pending')}
+                              </span>
+                              {bet.prediction_type === 'private' && (
+                                <span style={{ color: '#64748B', fontSize: 10 }}>🔒</span>
+                              )}
+                            </div>
+                          </div>
+                          <span style={{ color: '#334155', fontSize: 11, flexShrink: 0 }}>
+                            {new Date(bet.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              transactions.length === 0 ? (
+                <p style={{ color: '#475569', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
+                  {t('profile.no_transactions')}
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {transactions.map(tx => (
+                    <div key={tx.id} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '10px 14px', background: '#0B1120', borderRadius: 10,
+                    }}>
+                      <div>
+                        <span style={{
+                          padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                          background: 'rgba(255,214,10,0.08)', color: '#FFD60A', textTransform: 'uppercase',
+                        }}>
+                          {tx.type}
+                        </span>
+                        <span style={{ color: '#475569', fontSize: 11, marginLeft: 8 }}>
+                          {new Date(tx.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <span style={{
+                        fontWeight: 700, fontSize: 14,
+                        color: tx.delta >= 0 ? '#2ED573' : '#FF4757',
+                      }}>
+                        {tx.delta >= 0 ? '+' : ''}{tx.delta}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
         </div>
 
         {/* Edit modal */}

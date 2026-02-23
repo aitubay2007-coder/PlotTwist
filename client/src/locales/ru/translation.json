@@ -72,7 +72,12 @@
     "coins": "Монеты",
     "total_bets": "Всего ставок",
     "win_rate": "Процент побед",
-    "recent_transactions": "Последние транзакции",
+    "my_bets": "Мои споры",
+    "no_bets": "Ты ещё не участвовал в спорах",
+    "bet_won": "Выиграл",
+    "bet_lost": "Проиграл",
+    "bet_pending": "В игре",
+    "recent_transactions": "Транзакции",
     "no_transactions": "Транзакций пока нет"
   },
   "auth": {
