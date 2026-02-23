@@ -97,6 +97,7 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 -- Drop old columns we no longer need
+ALTER TABLE public.predictions DROP COLUMN IF EXISTS deadline;
 ALTER TABLE public.predictions DROP COLUMN IF EXISTS mode;
 ALTER TABLE public.predictions DROP COLUMN IF EXISTS visibility;
 ALTER TABLE public.predictions DROP COLUMN IF EXISTS show_id;

@@ -53,8 +53,10 @@ export default function CreatePrediction() {
       } else {
         navigate(`/prediction/${result.id}`);
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('common.error'));
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message || t('common.error');
+      console.error('[CreatePrediction]', err);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
