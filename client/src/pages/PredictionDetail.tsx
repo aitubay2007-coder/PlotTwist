@@ -63,11 +63,11 @@ export default function PredictionDetail() {
   const handleBet = async (outcome: 'yes' | 'no', amount: number) => {
     if (!prediction) return;
     try {
-      const { data, error } = await supabase.rpc('place_bet', {
+      const { data, error } = await withTimeout(supabase.rpc('place_bet', {
         p_prediction_id: prediction.id,
         p_outcome: outcome,
         p_amount: amount,
-      });
+      }), 8000);
       if (error) throw error;
       const result = typeof data === 'string' ? JSON.parse(data) : data;
       if (result.error) { toast.error(result.error); throw new Error(result.error); }
@@ -89,10 +89,10 @@ export default function PredictionDetail() {
     setResolving(true);
     try {
       const rpc = prediction.type === 'official' ? 'resolve_official' : 'resolve_private';
-      const { data, error } = await supabase.rpc(rpc, {
+      const { data, error } = await withTimeout(supabase.rpc(rpc, {
         p_prediction_id: prediction.id,
         p_outcome: outcome,
-      });
+      }), 8000);
       if (error) throw error;
       const result = typeof data === 'string' ? JSON.parse(data) : data;
       if (result.error) { toast.error(result.error); return; }

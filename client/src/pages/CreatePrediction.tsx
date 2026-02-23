@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Globe, Lock } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -35,12 +35,12 @@ export default function CreatePrediction() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('create_prediction', {
+      const { data, error } = await withTimeout(supabase.rpc('create_prediction', {
         p_title: title.trim(),
         p_description: description.trim() || null,
         p_type: type,
         p_deadline_at: deadlineAt,
-      });
+      }), 8000);
 
       if (error) throw error;
       const result = typeof data === 'string' ? JSON.parse(data) : data;

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Lock, Clock, TrendingUp, Users, CheckCircle, Share2, Copy } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import BetModal from '../components/BetModal';
 import toast from 'react-hot-toast';
@@ -37,7 +37,7 @@ export default function PrivatePrediction() {
   const fetchData = useCallback(async () => {
     if (!token) return;
     try {
-      const { data: result, error } = await supabase.rpc('get_private_prediction', { p_token: token });
+      const { data: result, error } = await withTimeout(supabase.rpc('get_private_prediction', { p_token: token }), 8000);
       if (error) throw error;
       const parsed = typeof result === 'string' ? JSON.parse(result) : result;
       if (parsed.error) { setData(null); return; }
@@ -102,11 +102,11 @@ export default function PrivatePrediction() {
 
   const handleBet = async (outcome: 'yes' | 'no', amount: number) => {
     try {
-      const { data: result, error } = await supabase.rpc('place_bet', {
+      const { data: result, error } = await withTimeout(supabase.rpc('place_bet', {
         p_prediction_id: pred.id,
         p_outcome: outcome,
         p_amount: amount,
-      });
+      }), 8000);
       if (error) throw error;
       const parsed = typeof result === 'string' ? JSON.parse(result) : result;
       if (parsed.error) { toast.error(parsed.error); throw new Error(parsed.error); }
@@ -123,10 +123,10 @@ export default function PrivatePrediction() {
   const handleResolve = async (outcome: 'yes' | 'no') => {
     setResolving(true);
     try {
-      const { data: result, error } = await supabase.rpc('resolve_private', {
+      const { data: result, error } = await withTimeout(supabase.rpc('resolve_private', {
         p_prediction_id: pred.id,
         p_outcome: outcome,
-      });
+      }), 8000);
       if (error) throw error;
       const parsed = typeof result === 'string' ? JSON.parse(result) : result;
       if (parsed.error) { toast.error(parsed.error); return; }

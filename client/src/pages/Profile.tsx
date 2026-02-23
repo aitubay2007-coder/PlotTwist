@@ -46,7 +46,7 @@ export default function Profile() {
       });
       setMyBets(mapped);
     }).catch(() => {});
-  }, [user]);
+  }, [user?.id]);
 
   if (!isAuthenticated || !user) {
     return (
@@ -85,7 +85,7 @@ export default function Profile() {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from('profiles').update({ display_name: editName || null }).eq('id', user.id);
+      const { error } = await withTimeout(supabase.from('profiles').update({ display_name: editName || null }).eq('id', user.id), 8000);
       if (error) throw error;
       await fetchProfile();
       toast.success(t('profile.saved'));
