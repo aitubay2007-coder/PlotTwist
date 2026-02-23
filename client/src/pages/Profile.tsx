@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Coins, Target, BarChart3, Gift, LogOut, Edit3, ArrowRight } from 'lucide-react';
+import { Gift, LogOut, Edit3 } from 'lucide-react';
 import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import type { Transaction } from '../types';
@@ -57,7 +57,7 @@ export default function Profile() {
     );
   }
 
-  const { winRate, totalBets, wonBets } = useMemo(() => {
+  const { winRate, totalBets } = useMemo(() => {
     const resolved = myBets.filter(b => b.status === 'resolved');
     const won = resolved.filter(b => b.outcome === b.resolved_outcome).length;
     return { totalBets: myBets.length, wonBets: won, winRate: resolved.length > 0 ? Math.round((won / resolved.length) * 100) : 0 };
