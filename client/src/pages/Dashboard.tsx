@@ -195,17 +195,12 @@ export default function Dashboard() {
           transition={{ duration: 0.22 }}
           style={{
           position: 'sticky',
-          top: isMobile ? 58 : 66,
+          top: isMobile ? 52 : 60,
           zIndex: 5,
           marginBottom: 16,
-          padding: '10px 0 12px',
+          padding: '6px 0 10px',
           background: 'linear-gradient(180deg, rgba(11,17,32,0.95), rgba(11,17,32,0.55) 70%, rgba(11,17,32,0))',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#FFD60A', letterSpacing: 0.3 }}>
-              {t('dashboard.ticker_title')}
-            </span>
-          </div>
           <div
             className="ticker-marquee"
             style={{ paddingBottom: 2 }}
