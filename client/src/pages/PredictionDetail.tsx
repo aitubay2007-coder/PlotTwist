@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
-import { supabase, withTimeout } from '../lib/supabase';
+import { supabase, withTimeout, isSupabaseConfigured } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import type { Prediction, Bet } from '../types';
 import BetModal from '../components/BetModal';
@@ -17,13 +17,21 @@ export default function PredictionDetail() {
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [bets, setBets] = useState<Bet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [betModalOpen, setBetModalOpen] = useState(false);
   const [resolving, setResolving] = useState(false);
   const isMobile = useIsMobile();
 
   const fetchData = useCallback(async () => {
+    setLoadError(null);
     if (!id) {
       setPrediction(null);
+      setLoading(false);
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      setPrediction(null);
+      setLoadError('Supabase is not configured in Vercel env');
       setLoading(false);
       return;
     }
@@ -83,8 +91,11 @@ export default function PredictionDetail() {
         profiles: { username: usernameById.get(b.user_id) || '?' },
       }));
       setBets(mappedBets);
-    } catch {
+    } catch (err: unknown) {
       setPrediction(null);
+      const msg = (err as { message?: string })?.message || 'Failed to load prediction';
+      setLoadError(msg);
+      console.error('[PredictionDetail] fetch failed:', err);
     } finally {
       setLoading(false);
     }
@@ -164,6 +175,11 @@ export default function PredictionDetail() {
     return (
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '60px 24px', textAlign: 'center' }}>
         <p style={{ color: '#64748B', fontSize: 18 }}>{t('predictions.not_found')}</p>
+        {loadError && (
+          <p style={{ color: '#FCA5A5', fontSize: 13, marginTop: 8 }}>
+            {loadError}
+          </p>
+        )}
         <Link to="/" style={{ color: '#FFD60A', textDecoration: 'none', marginTop: 12, display: 'inline-block' }}>
           {t('common.back_home')}
         </Link>
