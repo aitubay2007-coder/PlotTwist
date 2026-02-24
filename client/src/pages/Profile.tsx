@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gift, LogOut, Edit3, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Gift, LogOut, Edit3, TrendingUp, Clock, CheckCircle, XCircle, Lock, Copy } from 'lucide-react';
 import { supabase, withTimeout } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import type { Transaction } from '../types';
@@ -22,6 +22,16 @@ interface MyBetItem {
   visibility_token: string | null;
 }
 
+interface MyCreatedPrediction {
+  id: string;
+  title: string;
+  status: 'open' | 'resolved';
+  type: 'official' | 'private';
+  created_at: string;
+  deadline_at: string;
+  visibility_token: string | null;
+}
+
 export default function Profile() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -32,7 +42,8 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [myBets, setMyBets] = useState<MyBetItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'bets' | 'transactions'>('bets');
+  const [myCreated, setMyCreated] = useState<MyCreatedPrediction[]>([]);
+  const [activeTab, setActiveTab] = useState<'bets' | 'created' | 'transactions'>('bets');
   const isMobile = useIsMobile();
 
   const bonusAvailable = useMemo(() => {
@@ -72,6 +83,14 @@ export default function Profile() {
       });
       setMyBets(mapped);
     }).catch(() => {});
+
+    withTimeout(
+      supabase.from('predictions').select('id, title, status, type, created_at, deadline_at, visibility_token')
+        .eq('creator_id', user.id).order('created_at', { ascending: false }).limit(50),
+      8000
+    ).then(({ data }) => {
+      setMyCreated((data || []) as MyCreatedPrediction[]);
+    }).catch(() => {});
   }, [user?.id]);
 
   if (!isAuthenticated || !user) {
@@ -99,6 +118,25 @@ export default function Profile() {
       navigate(`/p/${bet.visibility_token}`);
     } else {
       navigate(`/prediction/${bet.prediction_id}`);
+    }
+  };
+
+  const handleCreatedClick = (p: MyCreatedPrediction) => {
+    if (p.type === 'private' && p.visibility_token) {
+      navigate(`/p/${p.visibility_token}`);
+      return;
+    }
+    navigate(`/prediction/${p.id}`);
+  };
+
+  const handleCopyPrivateLink = async (token: string | null) => {
+    if (!token) return;
+    const shareUrl = `${window.location.origin}/p/${token}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success(t('common.copied'));
+    } catch {
+      toast.error(t('common.error'));
     }
   };
 
@@ -208,7 +246,7 @@ export default function Profile() {
           borderRadius: 16, overflow: 'hidden',
         }}>
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-            {(['bets', 'transactions'] as const).map(tab => (
+            {(['bets', 'created', 'transactions'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -223,12 +261,18 @@ export default function Profile() {
                 }}
               >
                 {tab === 'bets' ? <TrendingUp size={14} /> : null}
-                {tab === 'bets' ? t('profile.my_bets') : t('profile.recent_transactions')}
+                {tab === 'bets' ? t('profile.my_bets') : tab === 'created' ? t('profile.created_predictions') : t('profile.recent_transactions')}
                 {tab === 'bets' && myBets.length > 0 && (
                   <span style={{
                     padding: '1px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700,
                     background: 'rgba(255,214,10,0.15)', color: '#FFD60A',
                   }}>{myBets.length}</span>
+                )}
+                {tab === 'created' && myCreated.length > 0 && (
+                  <span style={{
+                    padding: '1px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700,
+                    background: 'rgba(255,214,10,0.15)', color: '#FFD60A',
+                  }}>{myCreated.length}</span>
                 )}
               </button>
             ))}
@@ -307,6 +351,79 @@ export default function Profile() {
                       </motion.div>
                     );
                   })}
+                </div>
+              )
+            ) : activeTab === 'created' ? (
+              myCreated.length === 0 ? (
+                <p style={{ color: '#475569', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
+                  {t('profile.no_created_predictions')}
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {myCreated.map((p) => (
+                    <motion.div
+                      key={p.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      style={{
+                        padding: '12px 14px', background: '#0B1120', borderRadius: 10,
+                        border: '1px solid rgba(255,255,255,0.03)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                        <button
+                          onClick={() => handleCreatedClick(p)}
+                          style={{
+                            border: 'none', background: 'transparent', padding: 0, margin: 0,
+                            color: '#E2E8F0', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                            textAlign: 'left', flex: 1, minWidth: 0,
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {p.title}
+                        </button>
+                        {p.type === 'private' && (
+                          <button
+                            onClick={() => handleCopyPrivateLink(p.visibility_token)}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 5,
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              background: 'rgba(255,255,255,0.03)',
+                              color: '#94A3B8', borderRadius: 7, padding: '4px 8px',
+                              cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                            }}
+                          >
+                            <Copy size={12} /> {t('common.copy_link')}
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                        <span style={{
+                          padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                          background: p.type === 'private' ? 'rgba(224,64,251,0.12)' : 'rgba(255,214,10,0.12)',
+                          color: p.type === 'private' ? '#E040FB' : '#FFD60A',
+                          display: 'inline-flex', alignItems: 'center', gap: 4, textTransform: 'uppercase',
+                        }}>
+                          {p.type === 'private' ? <Lock size={10} /> : null}
+                          {p.type}
+                        </span>
+                        <span style={{
+                          padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                          background: p.status === 'open' ? 'rgba(46,213,115,0.12)' : 'rgba(148,163,184,0.12)',
+                          color: p.status === 'open' ? '#2ED573' : '#94A3B8',
+                          textTransform: 'uppercase',
+                        }}>
+                          {p.status === 'open' ? t('predictions.open') : t('predictions.resolved')}
+                        </span>
+                        <span style={{ color: '#64748B', fontSize: 11 }}>
+                          {new Date(p.created_at).toLocaleDateString()}
+                        </span>
+                        <span style={{ color: '#475569', fontSize: 11 }}>
+                          {new Date(p.deadline_at).toLocaleString()}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               )
             ) : (
