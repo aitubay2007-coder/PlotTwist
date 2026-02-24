@@ -35,7 +35,11 @@ export default function PrivatePrediction() {
   const isMobile = useIsMobile();
 
   const fetchData = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
     try {
       const { data: result, error } = await withTimeout(supabase.rpc('get_private_prediction', { p_token: token }), 8000);
       if (error) throw error;

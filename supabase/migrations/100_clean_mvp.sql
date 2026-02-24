@@ -324,6 +324,9 @@ DECLARE
   v_payout INT;
   v_winners INT := 0;
   v_paid INT := 0;
+  v_winner_count INT := 0;
+  v_winner_idx INT := 0;
+  v_remaining_pool INT := 0;
 BEGIN
   IF auth.uid() IS NULL THEN
     RETURN json_build_object('error', 'Unauthorized');
@@ -346,14 +349,23 @@ BEGIN
   -- Calculate pools
   SELECT COALESCE(SUM(amount), 0) INTO v_total_pool FROM public.bets WHERE prediction_id = p_prediction_id;
   SELECT COALESCE(SUM(amount), 0) INTO v_winners_pool FROM public.bets WHERE prediction_id = p_prediction_id AND outcome = p_outcome;
+  SELECT COUNT(*) INTO v_winner_count FROM public.bets WHERE prediction_id = p_prediction_id AND outcome = p_outcome;
 
   -- Pay winners or refund everyone if no winners
   IF v_winners_pool > 0 AND v_total_pool > 0 THEN
+    v_remaining_pool := v_total_pool;
     FOR v_bet IN
       SELECT user_id, amount FROM public.bets
       WHERE prediction_id = p_prediction_id AND outcome = p_outcome
+      ORDER BY user_id
     LOOP
-      v_payout := ROUND((v_bet.amount::NUMERIC / v_winners_pool::NUMERIC) * v_total_pool::NUMERIC);
+      v_winner_idx := v_winner_idx + 1;
+      IF v_winner_idx < v_winner_count THEN
+        v_payout := FLOOR((v_bet.amount::NUMERIC * v_total_pool::NUMERIC) / v_winners_pool::NUMERIC);
+        v_remaining_pool := v_remaining_pool - v_payout;
+      ELSE
+        v_payout := GREATEST(v_remaining_pool, 0);
+      END IF;
       UPDATE public.profiles SET coins_balance = coins_balance + v_payout WHERE id = v_bet.user_id;
       INSERT INTO public.transactions (user_id, type, delta)
       VALUES (v_bet.user_id, 'payout', v_payout);
@@ -395,6 +407,9 @@ DECLARE
   v_payout INT;
   v_winners INT := 0;
   v_paid INT := 0;
+  v_winner_count INT := 0;
+  v_winner_idx INT := 0;
+  v_remaining_pool INT := 0;
 BEGIN
   IF auth.uid() IS NULL THEN
     RETURN json_build_object('error', 'Unauthorized');
@@ -413,14 +428,23 @@ BEGIN
   -- Calculate pools
   SELECT COALESCE(SUM(amount), 0) INTO v_total_pool FROM public.bets WHERE prediction_id = p_prediction_id;
   SELECT COALESCE(SUM(amount), 0) INTO v_winners_pool FROM public.bets WHERE prediction_id = p_prediction_id AND outcome = p_outcome;
+  SELECT COUNT(*) INTO v_winner_count FROM public.bets WHERE prediction_id = p_prediction_id AND outcome = p_outcome;
 
   -- Pay winners or refund everyone if no winners
   IF v_winners_pool > 0 AND v_total_pool > 0 THEN
+    v_remaining_pool := v_total_pool;
     FOR v_bet IN
       SELECT user_id, amount FROM public.bets
       WHERE prediction_id = p_prediction_id AND outcome = p_outcome
+      ORDER BY user_id
     LOOP
-      v_payout := ROUND((v_bet.amount::NUMERIC / v_winners_pool::NUMERIC) * v_total_pool::NUMERIC);
+      v_winner_idx := v_winner_idx + 1;
+      IF v_winner_idx < v_winner_count THEN
+        v_payout := FLOOR((v_bet.amount::NUMERIC * v_total_pool::NUMERIC) / v_winners_pool::NUMERIC);
+        v_remaining_pool := v_remaining_pool - v_payout;
+      ELSE
+        v_payout := GREATEST(v_remaining_pool, 0);
+      END IF;
       UPDATE public.profiles SET coins_balance = coins_balance + v_payout WHERE id = v_bet.user_id;
       INSERT INTO public.transactions (user_id, type, delta)
       VALUES (v_bet.user_id, 'payout', v_payout);
@@ -550,7 +574,16 @@ DROP POLICY IF EXISTS "bets_select" ON public.bets;
 DROP POLICY IF EXISTS "bets_insert" ON public.bets;
 DROP POLICY IF EXISTS "Authenticated users can place bets" ON public.bets;
 
-CREATE POLICY "bets_select" ON public.bets FOR SELECT USING (true);
+CREATE POLICY "bets_select" ON public.bets FOR SELECT
+  USING (
+    user_id = auth.uid()
+    OR EXISTS (
+      SELECT 1
+      FROM public.predictions p
+      WHERE p.id = prediction_id
+        AND (p.type = 'official' OR p.creator_id = auth.uid())
+    )
+  );
 
 -- TRANSACTIONS
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;

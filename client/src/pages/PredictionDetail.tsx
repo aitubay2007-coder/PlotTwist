@@ -22,7 +22,11 @@ export default function PredictionDetail() {
   const isMobile = useIsMobile();
 
   const fetchData = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      setPrediction(null);
+      setLoading(false);
+      return;
+    }
     try {
       const { data: pred } = await withTimeout(
         supabase.from('predictions').select('*, profiles(username)').eq('id', id).single(),
