@@ -67,7 +67,7 @@ export default function PredictionDetail() {
               .in('id', userIds),
             8000
           )
-        : { data: [], error: null };
+        : { data: [] };
 
       const usernameById = new Map<string, string>(
         ((betUsers || []) as { id: string; username: string }[]).map((u) => [u.id, u.username])
