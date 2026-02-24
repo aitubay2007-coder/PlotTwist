@@ -80,6 +80,37 @@ input, textarea, select, button { max-width: 100%; font-family: inherit; }
   50% { opacity: 0.5; }
 }
 
+@keyframes tickerScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.ticker-marquee {
+  overflow: hidden;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+}
+
+.ticker-track {
+  display: flex;
+  gap: 8px;
+  width: max-content;
+  animation: tickerScroll 36s linear infinite;
+  will-change: transform;
+}
+
+.ticker-marquee:hover .ticker-track,
+.ticker-marquee:active .ticker-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+}
+
 /* Mobile-specific */
 @media (max-width: 767px) {
   body {

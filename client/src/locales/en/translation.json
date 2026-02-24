@@ -12,7 +12,11 @@
   },
   "dashboard": {
     "subtitle": "Active official predictions",
-    "empty": "No predictions yet. Be the first to create one!"
+    "empty": "No predictions yet. Be the first to create one!",
+    "ticker_title": "Market Ticker",
+    "my_participation_title": "Markets You Joined",
+    "my_participation_empty": "You haven't joined any markets yet",
+    "unknown_market": "Unknown market"
   },
   "predictions": {
     "create": "Create Prediction",
