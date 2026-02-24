@@ -560,11 +560,39 @@ DROP POLICY IF EXISTS "predictions_select" ON public.predictions;
 DROP POLICY IF EXISTS "predictions_insert" ON public.predictions;
 DROP POLICY IF EXISTS "Authenticated users can create predictions" ON public.predictions;
 
+CREATE OR REPLACE FUNCTION public.user_has_bet_on_prediction(p_user_id UUID, p_prediction_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.bets b
+    WHERE b.user_id = p_user_id
+      AND b.prediction_id = p_prediction_id
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.can_read_bet_for_prediction(p_user_id UUID, p_prediction_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.predictions p
+    WHERE p.id = p_prediction_id
+      AND (p.type = 'official' OR p.creator_id = p_user_id)
+  );
+$$;
+
 CREATE POLICY "predictions_select" ON public.predictions FOR SELECT
   USING (
     type = 'official'
     OR creator_id = auth.uid()
-    OR id IN (SELECT prediction_id FROM public.bets WHERE user_id = auth.uid())
+    OR public.user_has_bet_on_prediction(auth.uid(), id)
   );
 
 -- BETS
@@ -577,12 +605,7 @@ DROP POLICY IF EXISTS "Authenticated users can place bets" ON public.bets;
 CREATE POLICY "bets_select" ON public.bets FOR SELECT
   USING (
     user_id = auth.uid()
-    OR EXISTS (
-      SELECT 1
-      FROM public.predictions p
-      WHERE p.id = prediction_id
-        AND (p.type = 'official' OR p.creator_id = auth.uid())
-    )
+    OR public.can_read_bet_for_prediction(auth.uid(), prediction_id)
   );
 
 -- TRANSACTIONS
