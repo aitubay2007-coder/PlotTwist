@@ -50,9 +50,7 @@ export default function Dashboard() {
       );
       if (error) throw error;
 
-      const now = Date.now();
       const withStats = ((data || []) as (Prediction & { bets: { amount: number; outcome: 'yes' | 'no' }[] })[])
-        .filter(p => new Date(p.deadline_at).getTime() > now)
         .map(p => {
           const betArr = p.bets || [];
           const totalPool = betArr.reduce((s, b) => s + (b.amount || 0), 0);
@@ -131,6 +129,7 @@ export default function Dashboard() {
 
   const timeLeft = (deadline: string) => {
     const ms = new Date(deadline).getTime() - Date.now();
+    if (!Number.isFinite(ms)) return t('predictions.expired');
     if (ms <= 0) return t('predictions.expired');
     const d = Math.floor(ms / 86400000);
     const h = Math.floor((ms % 86400000) / 3600000);
