@@ -28,21 +28,61 @@ export default function PredictionDetail() {
       return;
     }
     try {
-      const { data: pred } = await withTimeout(
-        supabase.from('predictions').select('*, profiles(username)').eq('id', id).single(),
+      const { data: pred, error: predError } = await withTimeout(
+        supabase
+          .from('predictions')
+          .select('id, creator_id, type, title, description, status, deadline_at, resolved_outcome, visibility_token, created_at')
+          .eq('id', id)
+          .single(),
         8000
       );
-      if (pred) setPrediction(pred as Prediction);
+      if (predError) throw predError;
+      if (!pred) throw new Error('Prediction not found');
 
-      const { data: betData } = await withTimeout(
+      const { data: creatorData } = await withTimeout(
+        supabase
+          .from('profiles')
+          .select('id, username')
+          .eq('id', (pred as Prediction).creator_id)
+          .single(),
+        8000
+      );
+
+      const { data: betData, error: betError } = await withTimeout(
         supabase
           .from('bets')
-          .select('*, profiles(username)')
+          .select('id, prediction_id, user_id, outcome, amount, created_at')
           .eq('prediction_id', id)
           .order('created_at'),
         8000
       );
-      setBets((betData || []) as Bet[]);
+      if (betError) throw betError;
+
+      const userIds = [...new Set(((betData || []) as Bet[]).map((b) => b.user_id))];
+      const { data: betUsers } = userIds.length > 0
+        ? await withTimeout(
+            supabase
+              .from('profiles')
+              .select('id, username')
+              .in('id', userIds),
+            8000
+          )
+        : { data: [], error: null };
+
+      const usernameById = new Map<string, string>(
+        ((betUsers || []) as { id: string; username: string }[]).map((u) => [u.id, u.username])
+      );
+
+      setPrediction({
+        ...(pred as Prediction),
+        profiles: { username: (creatorData as { username?: string } | null)?.username || 'unknown' },
+      });
+
+      const mappedBets: Bet[] = ((betData || []) as Bet[]).map((b) => ({
+        ...b,
+        profiles: { username: usernameById.get(b.user_id) || '?' },
+      }));
+      setBets(mappedBets);
     } catch {
       setPrediction(null);
     } finally {
