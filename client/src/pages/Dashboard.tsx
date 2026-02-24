@@ -41,7 +41,7 @@ export default function Dashboard() {
       const { data, error } = await withTimeout(
         supabase
           .from('predictions')
-          .select('*, profiles(username), bets(amount, outcome)')
+          .select('id, creator_id, type, title, description, status, deadline_at, resolved_outcome, visibility_token, created_at')
           .eq('type', 'official')
           .eq('status', 'open')
           .order('created_at', { ascending: false })
@@ -50,18 +50,58 @@ export default function Dashboard() {
       );
       if (error) throw error;
 
-      const withStats = ((data || []) as (Prediction & { bets: { amount: number; outcome: 'yes' | 'no' }[] })[])
-        .map(p => {
-          const betArr = p.bets || [];
-          const totalPool = betArr.reduce((s, b) => s + (b.amount || 0), 0);
-          const yesPool = betArr.filter(b => b.outcome === 'yes').reduce((s, b) => s + (b.amount || 0), 0);
-          return {
-            ...p,
-            bet_count: betArr.length,
-            total_pool: totalPool,
-            yes_pct: totalPool > 0 ? Math.round((yesPool / totalPool) * 100) : 50,
-          };
-        });
+      const rows = (data || []) as Prediction[];
+      const predictionIds = rows.map((p) => p.id);
+      const creatorIds = [...new Set(rows.map((p) => p.creator_id))];
+
+      const [betsResult, profilesResult] = await Promise.all([
+        predictionIds.length > 0
+          ? withTimeout(
+              supabase
+                .from('bets')
+                .select('prediction_id, amount, outcome')
+                .in('prediction_id', predictionIds),
+              8000
+            )
+          : Promise.resolve({ data: [], error: null }),
+        creatorIds.length > 0
+          ? withTimeout(
+              supabase
+                .from('profiles')
+                .select('id, username')
+                .in('id', creatorIds),
+              8000
+            )
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (betsResult.error) throw betsResult.error;
+      if (profilesResult.error) throw profilesResult.error;
+
+      const usernameById = new Map<string, string>(
+        ((profilesResult.data || []) as { id: string; username: string }[])
+          .map((p) => [p.id, p.username])
+      );
+
+      const betAgg = new Map<string, { bet_count: number; total_pool: number; yes_pool: number }>();
+      for (const bet of (betsResult.data || []) as { prediction_id: string; amount: number; outcome: 'yes' | 'no' }[]) {
+        const current = betAgg.get(bet.prediction_id) || { bet_count: 0, total_pool: 0, yes_pool: 0 };
+        current.bet_count += 1;
+        current.total_pool += bet.amount || 0;
+        if (bet.outcome === 'yes') current.yes_pool += bet.amount || 0;
+        betAgg.set(bet.prediction_id, current);
+      }
+
+      const withStats = rows.map((p) => {
+        const agg = betAgg.get(p.id) || { bet_count: 0, total_pool: 0, yes_pool: 0 };
+        return {
+          ...p,
+          profiles: { username: usernameById.get(p.creator_id) || 'unknown' },
+          bet_count: agg.bet_count,
+          total_pool: agg.total_pool,
+          yes_pct: agg.total_pool > 0 ? Math.round((agg.yes_pool / agg.total_pool) * 100) : 50,
+        };
+      });
 
       setPredictions(withStats);
     } catch (err) {
